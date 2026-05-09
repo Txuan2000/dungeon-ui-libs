@@ -1,0 +1,114 @@
+.dg-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  overflow: hidden;
+  font-family: inherit;
+  color: #0f172a;
+
+  &__header {
+    display: grid;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex: 0 0 auto;
+  }
+
+  &__hcell {
+    padding: 0.625rem 0.875rem;
+    border-right: 1px solid #e2e8f0;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+
+  &__viewport {
+    flex: 1 1 auto;
+    overflow: auto;
+    position: relative;
+  }
+
+  &__spacer {
+    position: relative;
+    width: 100%;
+
+    > .dg-table__rows {
+      position: absolute;
+      inset: 0 0 auto 0;
+      will-change: transform;
+    }
+  }
+
+  &__row {
+    display: grid;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 80ms ease;
+
+    &:hover {
+      background: #f8fafc;
+    }
+  }
+
+  &__cell {
+    padding: 0 0.875rem;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-right: 1px solid #f1f5f9;
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+
+  &__loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    background: rgba(248, 250, 252, 0.7);
+    backdrop-filter: blur(1px);
+    pointer-events: none;
+  }
+
+  &__loading-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: #2563eb;
+    animation: dg-table-bounce 0.9s ease-in-out infinite;
+
+    &:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+  }
+}
+
+@keyframes dg-table-bounce {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

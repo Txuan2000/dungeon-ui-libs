@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Cloudflare Pages project name. Final URL will be:
+  //   https://dungeon-ui.pages.dev
+  // Preview deploys (non-production branches): <branch>.dungeon-ui.pages.dev
+  "name": "dungeon-ui",
+  // Angular's static prerender output. Each route lives at <route>/index.html
+  // alongside JS chunks, CSS, _redirects (SPA fallback), favicon.
+  "pages_build_output_dir": "./dist/dungeon-ui-libs/browser",
+  "compatibility_date": "2026-05-09"
+}

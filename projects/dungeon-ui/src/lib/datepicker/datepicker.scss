@@ -1,0 +1,360 @@
+// Common patterns are kept as %placeholders so `@extend` merges them into
+// shared selector lists at compile time — keeps the generated CSS small
+// without losing readability in source.
+
+%dg-dp-btn-reset {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+%dg-dp-focus-ring {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+
+:host {
+  display: inline-block;
+  position: relative;
+  font: inherit;
+  min-width: 12rem;
+
+  &[data-fluid='true'] {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+// --- Field (trigger input + button) ---
+.dg-datepicker__field {
+  display: inline-flex;
+  align-items: stretch;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  background: #ffffff;
+  transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+
+  &:focus-within {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  }
+
+  &[data-disabled] {
+    background: #f1f5f9;
+    cursor: not-allowed;
+  }
+
+  &[data-variant='filled'] {
+    background: #f1f5f9;
+    border-color: transparent;
+
+    &:focus-within {
+      background: #ffffff;
+      border-color: #2563eb;
+    }
+  }
+
+  &[data-invalid='true'] {
+    border-color: #dc2626;
+
+    &:focus-within {
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+    }
+  }
+
+  &[data-size='small'] .dg-datepicker__input {
+    padding: 0.3125rem 0.5rem;
+    font-size: 0.8125rem;
+  }
+  &[data-size='large'] .dg-datepicker__input {
+    padding: 0.625rem 0.875rem;
+    font-size: 1.0625rem;
+  }
+}
+
+.dg-datepicker__input {
+  flex: 1 1 auto;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  outline: none;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  color: #0f172a;
+  min-width: 0;
+
+  &:disabled {
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+}
+
+.dg-datepicker__clear,
+.dg-datepicker__trigger {
+  flex: 0 0 auto;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: #64748b;
+  padding: 0 0.5rem;
+
+  &:hover:not(:disabled) {
+    color: #1d4ed8;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.dg-datepicker__clear {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.dg-datepicker__trigger {
+  border-left: 1px solid #e2e8f0;
+}
+
+// --- Panel ---
+.dg-datepicker__panel {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  z-index: 1000;
+  min-width: 18rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.06);
+  padding: 0.75rem;
+  box-sizing: border-box;
+  user-select: none;
+
+  &--inline {
+    position: static;
+    box-shadow: none;
+    border-color: #e2e8f0;
+  }
+
+  &--detached {
+    position: fixed;
+    top: auto;
+    left: auto;
+    z-index: 1100;
+  }
+}
+
+// --- Calendar header ---
+.dg-datepicker__cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.dg-datepicker__nav {
+  @extend %dg-dp-btn-reset;
+  border-radius: 0.25rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 1rem;
+  line-height: 1;
+  color: #475569;
+
+  &:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+}
+
+.dg-datepicker__title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: #0f172a;
+  text-transform: capitalize;
+}
+
+.dg-datepicker__title-btn {
+  @extend %dg-dp-btn-reset;
+  border-radius: 0.25rem;
+  font-weight: 600;
+  color: inherit;
+  padding: 0.125rem 0.375rem;
+  transition: background-color 80ms ease;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+}
+
+.dg-datepicker__title-month {
+  font-size: 0.9375rem;
+}
+
+.dg-datepicker__title-year {
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.dg-datepicker__title-range {
+  font-size: 0.9375rem;
+  color: #0f172a;
+}
+
+// --- Month / Year picker grids ---
+.dg-datepicker__picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.375rem;
+  padding: 0.5rem 0;
+}
+
+.dg-datepicker__picker-cell {
+  @extend %dg-dp-btn-reset;
+  border-radius: 0.375rem;
+  padding: 0.625rem 0.375rem;
+  font-size: 0.9375rem;
+  color: #0f172a;
+  text-transform: capitalize;
+  transition: background-color 80ms ease, color 80ms ease;
+}
+
+// --- Grid ---
+.dg-datepicker__grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+
+  th {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.375rem 0;
+    text-align: center;
+  }
+
+  td {
+    text-align: center;
+    padding: 1px;
+  }
+}
+
+.dg-datepicker__week-head,
+.dg-datepicker__week-num {
+  color: #cbd5e1;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.dg-datepicker__cell {
+  cursor: pointer;
+  border-radius: 0.3125rem;
+  height: 2rem;
+  width: 2rem;
+  font-size: 0.875rem;
+  color: #0f172a;
+  transition: background-color 80ms ease, color 80ms ease;
+
+  &--other {
+    color: #cbd5e1;
+  }
+
+  &--in-range {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border-radius: 0;
+  }
+
+  &--range-start {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  &--range-end {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+}
+
+// Cell + picker-cell share these state styles. Declared once each.
+.dg-datepicker__cell:hover:not(.dg-datepicker__cell--disabled):not(.dg-datepicker__cell--selected),
+.dg-datepicker__picker-cell:hover:not(.dg-datepicker__picker-cell--disabled):not(.dg-datepicker__picker-cell--selected) {
+  background: #e0f2fe;
+  color: #0c4a6e;
+}
+
+.dg-datepicker__cell--today:not(.dg-datepicker__cell--selected),
+.dg-datepicker__picker-cell--today:not(.dg-datepicker__picker-cell--selected) {
+  box-shadow: inset 0 0 0 1px #2563eb;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.dg-datepicker__cell--selected,
+.dg-datepicker__cell--range-start,
+.dg-datepicker__cell--range-end,
+.dg-datepicker__picker-cell--selected {
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.dg-datepicker__cell--disabled,
+.dg-datepicker__picker-cell--disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+  background: transparent;
+}
+
+.dg-datepicker__cell-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+// --- Button bar ---
+.dg-datepicker__bar {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.dg-datepicker__bar-btn {
+  @extend %dg-dp-btn-reset;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+  color: #2563eb;
+
+  &:hover {
+    background: #eff6ff;
+  }
+}
+
+// All 4 reset-buttons share the same focus ring — declared once.
+.dg-datepicker__nav,
+.dg-datepicker__title-btn,
+.dg-datepicker__picker-cell,
+.dg-datepicker__bar-btn {
+  &:focus-visible {
+    @extend %dg-dp-focus-ring;
+  }
+}

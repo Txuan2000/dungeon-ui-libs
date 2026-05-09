@@ -1,0 +1,80 @@
+// `.dg-icon-field` is intentionally global (the component uses
+// `ViewEncapsulation.None`) so it can reach into descendant component
+// templates and adjust the inner field's padding to make room for the
+// overlaid icon. Rules are scoped under `.dg-icon-field` so they don't
+// leak. See the input-group SCSS for a longer note on why `!important`
+// is required for cross-component padding/style overrides.
+
+.dg-icon-field {
+  display: inline-flex;
+  position: relative;
+  font: inherit;
+
+  &[data-fluid='true'] {
+    display: flex;
+    width: 100%;
+  }
+
+  // Make the wrapped input fill the field area.
+  > * {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  // ---------------------------------------------------------------------
+  // Icon position & visual.
+  // ---------------------------------------------------------------------
+
+  $offset: 0.625rem; // distance from the field's edge to the icon center
+  $reserve: 2rem;    // reserved padding on the input so text doesn't sit
+                     // under the icon
+
+  .dg-input-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #94a3b8;
+    font-size: 0.95em;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    z-index: 2; // sit above the field's own border / focus ring
+  }
+
+  &[data-icon-position='left'] .dg-input-icon {
+    left: $offset;
+  }
+
+  &[data-icon-position='right'] .dg-input-icon {
+    right: $offset;
+  }
+
+  // ---------------------------------------------------------------------
+  // Reserve padding on the underlying input field so the typed text never
+  // overlaps the icon. Targets the visible "field" classes of the known
+  // input components. `!important` overrides the component's own padding
+  // (equal specificity, undefined Angular CSS load order — see the
+  // input-group SCSS for the same situation).
+  // ---------------------------------------------------------------------
+
+  $fields: ('.dg-input-text__field', '.dg-input-number__field', '.dg-dropdown__trigger', '.dg-datepicker__field');
+
+  &[data-icon-position='left'] {
+    @each $cls in $fields {
+      > #{$cls},
+      > * #{$cls} {
+        padding-left: $reserve !important;
+      }
+    }
+  }
+
+  &[data-icon-position='right'] {
+    @each $cls in $fields {
+      > #{$cls},
+      > * #{$cls} {
+        padding-right: $reserve !important;
+      }
+    }
+  }
+}

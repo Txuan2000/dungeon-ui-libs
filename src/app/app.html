@@ -1,0 +1,40 @@
+<div class="app-shell" [class.app-shell--mobile-nav-open]="mobileNavOpen()">
+  <button
+    type="button"
+    class="app-shell__hamburger"
+    (click)="toggleMobileNav()"
+    aria-label="Toggle navigation"
+    [attr.aria-expanded]="mobileNavOpen()"
+  >
+    <span aria-hidden="true">{{ mobileNavOpen() ? '✕' : '☰' }}</span>
+  </button>
+
+  <div
+    class="app-shell__backdrop"
+    (click)="closeMobileNav()"
+    aria-hidden="true"
+  ></div>
+
+  <aside class="app-shell__sidebar">
+    <a class="app-shell__brand" routerLink="/" (click)="closeMobileNav()">
+      <span class="app-shell__brand-mark">⛓</span>
+      <span class="app-shell__brand-name">dungeon-ui</span>
+    </a>
+    <app-search class="app-shell__search" />
+    <dg-nav-menu
+      class="app-shell__nav"
+      [model]="navItems"
+      [value]="activeRoute()"
+      orientation="vertical"
+      variant="pills"
+      size="small"
+      fluid
+      breakpoint="0px"
+      (itemClick)="onNavSelect($event)"
+    />
+  </aside>
+
+  <main class="app-shell__main">
+    <router-outlet />
+  </main>
+</div>

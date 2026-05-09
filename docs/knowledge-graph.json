@@ -1,0 +1,593 @@
+{
+  "$schema": "https://dungeon-ui.local/kg.v1.json",
+  "version": "1",
+  "name": "dungeon-ui-libs",
+  "description": "Compact knowledge graph for AI agents working on dungeon-ui + the demo app. Pairs with the SQLite RAG index (db/rag.db). Read this FIRST to navigate; query RAG for chunk-level details.",
+  "framework": {
+    "angular": "21",
+    "node": "lts",
+    "build": "ng build (Angular 21 + ng-packagr)",
+    "test": "ng test (vitest)",
+    "library_peer_deps": ["@angular/common", "@angular/core"]
+  },
+  "patterns": {
+    "selector_prefix": "dg-",
+    "directive_marker_suffix": "Def",
+    "change_detection": "OnPush on every component",
+    "encapsulation_default": "Emulated",
+    "encapsulation_none_for": ["DgInputGroup", "DgIconField", "App"],
+    "signals": "input() / model() / output() / signal() / computed() / effect()",
+    "boolean_input_transform": "booleanish — accepts true | 'true' | ''",
+    "forms_cva": ["DgInputText", "DgInputNumber", "DgCheckbox", "DgRadio", "DgDropdown", "DgAutocomplete", "DgDatepicker"],
+    "body_portal": ["DgDropdown.appendTo='body'", "DgAutocomplete.appendTo='body'", "DgDatepicker.appendTo='body'"],
+    "global_layout_overrides_use_important": "DgInputGroup + DgIconField mutate descendants' padding/border-radius across components with equal-specificity rules; !important is intentional and documented in those .scss files.",
+    "output_naming_avoid_native_collisions": "NEVER name an output() after a native DOM event that the inner template fires (`change`, `input`, `focus`, `blur`, `click`, `submit`, `reset`, `select`). The native event bubbles from the inner element to the custom-component host, and Angular's `(eventName)` binding on the host becomes ambiguous — the @Output may silently fail to fire. Prefix or rename: `checkboxChange`, `inputEvent`, `focused`, `blurred`, `clicked`, `selectedChange`. PrimeNG follows the same convention (`onChange`, `onFocus`, `onBlur`).",
+    "style_budget": {
+      "anyComponentStyle": { "warning": "6kB", "error": "8kB" },
+      "rationale": "Default 4kB warning is too tight for rich layout components (calendar pickers, hierarchical menus, multi-field input-groups). 6kB matches the natural floor after optimization; 8kB error catches genuine bloat (e.g. DgButton.scss compiled to 8.6kB before its severity refactor).",
+      "config_path": "angular.json projects.dungeon-ui-libs.architect.build.configurations.production.budgets"
+    },
+    "style_optimization_recipes": {
+      "severity_via_css_vars": "DgButton.scss declares each severity as a block of CSS custom properties (--dg-btn-bg/fg/hover/soft); variant rules read them via var(...). Avoids @each loop generating N×M selector blocks.",
+      "shared_via_extend_placeholder": "DgDatepicker.scss uses %dg-dp-btn-reset and %dg-dp-focus-ring placeholders with @extend so duplicated patterns merge into one comma-list selector at compile time.",
+      "single_rule_with_selector_list": "DgInputGroup.scss writes 4 concerns (zero-radii, first/last-child outer corners, drop-left-border, lift-z-index) as one CSS rule each with hand-written 10–12-selector list — single declaration block instead of @each generating one rule per field."
+    },
+    "vi_aliases": {
+      "purpose": "Vietnamese phrase → component name lookup. Use this BEFORE rag_query when the user's request is in Vietnamese — the embedding model may miss VN phrasing, but a literal lookup here resolves the component first, then the rag_query can use the English component name.",
+      "DgButton": ["nút", "nút bấm", "button"],
+      "DgInputText": ["ô nhập", "ô nhập text", "input text", "trường text"],
+      "DgInputMask": ["mask", "mặt nạ", "định dạng nhập", "format khi gõ"],
+      "DgInputNumber": ["ô nhập số", "input số", "trường số", "tiền tệ", "phần trăm"],
+      "DgInputGroup": ["nhóm input", "input group", "addon trái phải"],
+      "DgIconField": ["ô có icon", "icon trong ô", "icon field"],
+      "DgDialog": ["hộp thoại", "dialog", "modal", "popup"],
+      "DgDropdown": ["xổ xuống", "dropdown", "select", "lựa chọn 1"],
+      "DgAutocomplete": ["gợi ý", "autocomplete", "tìm kiếm gợi ý", "ô tìm có dropdown"],
+      "DgCheckbox": ["ô tích", "ô tích chọn", "checkbox", "đánh dấu", "tick", "select all", "chọn nhiều bằng tick"],
+      "DgRadio": ["radio", "radiobox", "radio button", "nút radio", "chọn 1", "single select", "đơn lựa chọn"],
+      "DgDatepicker": ["chọn ngày", "lịch", "datepicker", "calendar"],
+      "DgTable": ["bảng", "table", "danh sách phân trang"],
+      "DgNavMenu": ["menu", "thanh menu", "sidebar", "nav menu", "menubar", "tabs"],
+      "DgFocusTrap": ["khoá tab", "trap focus", "giữ focus trong vùng"]
+    }
+  },
+  "library": {
+    "path": "projects/dungeon-ui/src",
+    "entry": "public-api.ts",
+    "exports": [
+      {
+        "name": "DgButton",
+        "kind": "component",
+        "selector": "dg-button",
+        "path": "lib/button/button.ts",
+        "scss": "lib/button/button.scss",
+        "demo": "/buttons",
+        "purpose": "Button — severity / variant / size / loading.",
+        "inputs": ["label", "icon", "iconPos", "severity", "size", "variant", "type", "disabled", "loading", "rounded", "raised", "fullWidth", "ariaLabel"],
+        "outputs": ["clicked", "focused", "blurred"]
+      },
+      {
+        "name": "DgInputText",
+        "kind": "component",
+        "selector": "dg-input-text",
+        "path": "lib/input-text/input-text.ts",
+        "demo": "/input-text",
+        "purpose": "Text input with size/variant/invalid/fluid + ControlValueAccessor.",
+        "inputs": ["value", "placeholder", "type", "size", "variant", "invalid", "fluid", "readonly", "name", "inputId", "ariaLabel", "ariaDescribedBy", "maxlength", "minlength"],
+        "outputs": ["inputEvent", "focused", "blurred"],
+        "field_class": "dg-input-text__field",
+        "cva": true
+      },
+      {
+        "name": "DgInputMask",
+        "kind": "directive",
+        "selector": "[dgInputMask]",
+        "path": "lib/input-mask/input-mask.ts",
+        "demo": "/input-mask",
+        "purpose": "Apply typing mask to any <input>; supports append-mode (default) and slot-mode (overwrite at click position).",
+        "inputs": ["dgInputMask (required)", "dgInputMaskSlot"],
+        "tokens": "9 = digit · a = letter · * = alphanumeric · others = literal separator",
+        "modes": {
+          "append": "auto-insert separators as user types from left",
+          "slot": "fill template (e.g. __/__/____); click into any slot to overwrite"
+        },
+        "exported_helpers": {
+          "applyMask(rawInput, mask)": "Append-mode: drop chars that don't fit the next token; auto-insert literal separators.",
+          "buildSlotTemplate(mask, slotChar)": "Slot-mode: build empty template (e.g. __/__/____) where each token slot holds slotChar.",
+          "padToMask(value, mask, slotChar)": "Pad/extend a partial value with slot chars so it lines up with the mask shape.",
+          "isAllSlots(value, mask, slotChar)": "True when every token position is still the slot char (treat as 'empty' for focusout).",
+          "firstSlotPos(value, mask, slotChar)": "Index of the first slot-char position — caret target on focus.",
+          "snapToToken(pos, mask)": "Snap a click cursor onto the next token position so click-to-edit lands on a slot, not a separator.",
+          "insertString(value, text, start, end, mask, slotChar)": "Slot-mode insert/overwrite at [start,end]; auto-skips literals; returns updated value + new caret.",
+          "deleteBackward(value, start, end, mask, slotChar)": "Replace the token before the caret with slotChar (Backspace in slot mode).",
+          "deleteForward(value, start, end, mask, slotChar)": "Replace the token at the caret with slotChar (Delete in slot mode)."
+        }
+      },
+      {
+        "name": "DgInputNumber",
+        "kind": "component",
+        "selector": "dg-input-number",
+        "path": "lib/input-number/input-number.ts",
+        "demo": "/input-number",
+        "purpose": "Numeric input with locale formatting (Intl.NumberFormat), spinner, min/max, currency/percent/decimal modes.",
+        "inputs": ["value", "min", "max", "step", "mode", "locale", "currency", "currencyDisplay", "useGrouping", "minFractionDigits", "maxFractionDigits", "prefix", "suffix", "placeholder", "ariaLabel", "allowEmpty", "showButtons", "buttonLayout", "showClear", "invalid", "fluid", "disabled", "readonly", "size", "variant"],
+        "outputs": ["valueChange", "cleared", "focused", "blurred"],
+        "field_class": "dg-input-number__field",
+        "cva": true,
+        "methods": {
+          "increment()": "Add `step` to the current value; clamp to `max`.",
+          "decrement()": "Subtract `step` from the current value; clamp to `min`.",
+          "clear(event?)": "Reset value to null and emit `cleared`.",
+          "focus()": "Programmatically focus the inner <input>."
+        }
+      },
+      {
+        "name": "DgInputGroup",
+        "kind": "component",
+        "selector": "dg-input-group",
+        "path": "lib/input-group/input-group.ts",
+        "demo": "/input-group",
+        "purpose": "Layout wrapper that joins inputs + addons + buttons into one bordered group with flat shared edges; rounded corners only on first/last child.",
+        "inputs": ["fluid"],
+        "encapsulation": "None",
+        "css_targets_known_field_classes": true,
+        "uses_important": true
+      },
+      {
+        "name": "DgInputGroupAddon",
+        "kind": "component",
+        "selector": "dg-input-group-addon",
+        "path": "lib/input-group/input-group.ts",
+        "purpose": "Static chip inside <dg-input-group> for icons / symbols / labels.",
+        "host_class": "dg-input-group__addon"
+      },
+      {
+        "name": "DgIconField",
+        "kind": "component",
+        "selector": "dg-icon-field",
+        "path": "lib/icon-field/icon-field.ts",
+        "demo": "/icon-field",
+        "purpose": "Overlay an icon INSIDE an input (left or right). Differs from input-group: no extra addon border; input gets internal padding for icon.",
+        "inputs": ["iconPosition", "fluid"],
+        "encapsulation": "None",
+        "uses_important": true
+      },
+      {
+        "name": "DgInputIcon",
+        "kind": "component",
+        "selector": "dg-input-icon",
+        "path": "lib/icon-field/icon-field.ts",
+        "purpose": "Single icon container inside <dg-icon-field>; absolutely positioned, vertically centered.",
+        "host_class": "dg-input-icon"
+      },
+      {
+        "name": "DgDialog",
+        "kind": "component",
+        "selector": "dg-dialog",
+        "path": "lib/dialog/dialog.ts",
+        "demo": "/dialog",
+        "purpose": "Modal/non-modal dialog built on native <dialog> + DgFocusTrap.",
+        "inputs": ["visible", "header", "modal", "closable", "closeOnEscape", "dismissableMask", "showHeader", "blockScroll", "position", "width", "closeAriaLabel", "headerTemplate", "footerTemplate", "focusTrap", "autoFocus"],
+        "outputs": ["shown", "hidden"],
+        "uses": ["DgFocusTrap"],
+        "templates": ["dgDialogHeader", "dgDialogFooter"],
+        "methods": {
+          "close()": "Set visible to false and emit `hidden`. (Inline-dialog API; programmatic dialogs close via DgDialogRef.close.)"
+        }
+      },
+      {
+        "name": "DgDialogService",
+        "kind": "service",
+        "path": "lib/dialog/dialog.service.ts",
+        "purpose": "Programmatic dialog opener. open(component, config) → DgDialogRef.",
+        "methods": {
+          "open<T,R,D,I>(component, config?)": "Instantiate `component` inside a host DgDialog, wire DG_DIALOG_DATA + setInput() inputs, return a DgDialogRef."
+        }
+      },
+      {
+        "name": "DgDialogRef",
+        "kind": "service",
+        "path": "lib/dialog/dialog-tokens.ts",
+        "purpose": "Handle returned by DgDialogService.open(); injected inside the dialog component for self-close + result reporting.",
+        "properties": {
+          "componentInstance": "The instantiated dialog content component (typed via generics).",
+          "afterOpened$": "Observable<void> — fires once after the dialog mounts.",
+          "afterClosed$": "Observable<TResult | undefined> — fires when close() is called (any source)."
+        },
+        "methods": {
+          "close(result?)": "Close the dialog and resolve afterClosed$ with the optional result.",
+          "afterClosed()": "Promise wrapper around afterClosed$ for await-style flows."
+        }
+      },
+      {
+        "name": "DgFocusTrap",
+        "kind": "directive",
+        "selector": "[dgFocusTrap]",
+        "exportAs": "dgFocusTrap",
+        "path": "lib/focus-trap/focus-trap.ts",
+        "demo": "/focus-trap",
+        "purpose": "Confine Tab/Shift+Tab to focusable descendants. Inserts two visually-hidden sentinels that wrap focus.",
+        "inputs": ["dgFocusTrapDisabled"],
+        "methods": {
+          "focusFirst()": "Focus the first focusable descendant of the host (or the host itself if none).",
+          "focusLast()": "Focus the last focusable descendant of the host."
+        }
+      },
+      {
+        "name": "DgCheckbox",
+        "kind": "component",
+        "selector": "dg-checkbox",
+        "path": "lib/checkbox/checkbox.ts",
+        "scss": "lib/checkbox/checkbox.scss",
+        "demo": "/checkbox",
+        "purpose": "Click-to-toggle checkbox: binary mode (boolean / trueValue-falseValue) + multi (group) mode (array contributions), indeterminate state, custom icon template, label.",
+        "inputs": ["value", "checkboxValue", "binary", "trueValue", "falseValue", "indeterminate", "label", "invalid", "disabled", "readonly", "size", "variant", "name", "inputId", "tabindex", "ariaLabel", "ariaDescribedBy"],
+        "outputs": ["checkboxChange", "focused", "blurred"],
+        "cva": true,
+        "templates": ["dgCheckboxIcon"],
+        "methods": {
+          "toggle(originalEvent?)": "Programmatic toggle (respects disabled / readonly). Updates value via binary/multi rules and fires `checkboxChange`.",
+          "focus()": "Focus the inner hidden <input type='checkbox'>."
+        },
+        "naming_note": "Output is `checkboxChange`, NOT `change` — `change` collides with the native DOM event bubbling from the inner <input>, making Angular's (change) binding on the custom-component host ambiguous / non-firing. Same reason PrimeNG's p-checkbox uses `onChange`."
+      },
+      {
+        "name": "DgRadio",
+        "kind": "component",
+        "selector": "dg-radio",
+        "path": "lib/radio/radio.ts",
+        "scss": "lib/radio/radio.scss",
+        "demo": "/radio",
+        "purpose": "Single-select radio. Group coordination via shared parent binding ([(value)] / [(ngModel)] / [formControl]) + DgRadioRegistry sibling-sync by `name`. Native `name` also drives browser-level Arrow-key nav.",
+        "inputs": ["value", "radioValue", "label", "invalid", "disabled", "readonly", "size", "variant", "name", "inputId", "tabindex", "ariaLabel", "ariaDescribedBy"],
+        "outputs": ["radioChange", "focused", "blurred"],
+        "field_class": "dg-radio__box",
+        "cva": true,
+        "templates": ["dgRadioIcon"],
+        "methods": {
+          "select(originalEvent?)": "Programmatically pick this radio (no-op when disabled / readonly / already checked). Updates `value` to `radioValue` and fires `radioChange`.",
+          "focus()": "Focus the inner hidden <input type='radio'>."
+        },
+        "naming_note": "Output is `radioChange`, NOT `change` — same native-event collision rationale as DgCheckbox. Per-radio payload is `radioValue` (mirrors DgCheckbox's `checkboxValue`), distinct from PrimeNG's `value` to keep `value` for the model() group binding.",
+        "registry_note": "DgRadioRegistry (Injectable, providedIn: 'root') syncs sibling radios sharing the same `name` when one is picked. Required for [formControl] / [(ngModel)] groups: Angular's `setValue(v, { emitModelToViewChange: false })` from the originating accessor blocks `writeValue` propagation to OTHER directives bound to the same control, so siblings would keep stale `value` and all render checked. Mirrors PrimeNG's RadioControlRegistry. For [(value)] signal binding, sibling sync still works via the parent signal + Angular CD; the registry is idempotent there. **Always set `name` on radios in the same group** — without it, registry sync is a no-op."
+      },
+      {
+        "name": "DgRadioRegistry",
+        "kind": "service",
+        "path": "lib/radio/radio.ts",
+        "purpose": "Internal coordination service for DgRadio sibling-sync (see DgRadio.registry_note). Exposed for tests / advanced custom integrations; normal users never inject it directly.",
+        "methods": {
+          "add(radio)": "Register a radio (called from DgRadio constructor).",
+          "remove(radio)": "Unregister a radio (called via DestroyRef onDestroy).",
+          "selected(picked)": "Sync siblings sharing `picked.name()`: each sibling's `value` is set to `picked.radioValue()` so its `checked` recomputes correctly."
+        }
+      },
+      {
+        "name": "DgDropdown",
+        "kind": "component",
+        "selector": "dg-dropdown",
+        "path": "lib/dropdown/dropdown.ts",
+        "demo": "/dropdown",
+        "purpose": "Custom-rendered select with filter, keyboard nav, body-portal, custom templates.",
+        "inputs": ["options", "optionLabel", "optionValue", "optionDisabled", "value", "placeholder", "filter", "filterPlaceholder", "filterBy", "clearable", "invalid", "fluid", "disabled", "size", "variant", "panelMaxHeight", "emptyMessage", "appendTo", "panelWidth"],
+        "outputs": ["opened", "closed", "selectedChange", "filterChange"],
+        "field_class": "dg-dropdown__trigger",
+        "cva": true,
+        "templates": ["dgDropdownOption", "dgDropdownSelected", "dgDropdownEmpty"],
+        "methods": {
+          "toggle()": "Open if closed, close if open (no-op when disabled).",
+          "openPanel()": "Force-open the panel and seed highlightedIndex with the selected (or first non-disabled) option.",
+          "close()": "Force-close the panel and emit `closed`.",
+          "select(option, event?)": "Pick `option`: set value, emit selectedChange, close, restore focus to trigger.",
+          "clear(event)": "Reset value to null and emit selectedChange(null)."
+        }
+      },
+      {
+        "name": "DgAutocomplete",
+        "kind": "component",
+        "selector": "dg-autocomplete",
+        "path": "lib/autocomplete/autocomplete.ts",
+        "demo": "/autocomplete",
+        "purpose": "Single-select combobox with debounced (complete) event — parent owns suggestions; supports dropdown trigger, forceSelection, body-portal, custom item/empty templates.",
+        "inputs": ["suggestions", "optionLabel", "optionValue", "optionDisabled", "value", "placeholder", "minLength", "delay", "forceSelection", "dropdown", "clearable", "invalid", "fluid", "readonly", "disabled", "size", "variant", "panelMaxHeight", "emptyMessage", "loading", "loadingMessage", "appendTo", "panelWidth"],
+        "outputs": ["complete", "selected", "cleared", "opened", "closed"],
+        "field_class": "dg-autocomplete__input",
+        "cva": true,
+        "templates": ["dgAutocompleteOption", "dgAutocompleteEmpty"],
+        "methods": {
+          "openPanel()": "Open the suggestions panel; seed highlightedIndex with the first non-disabled option.",
+          "close()": "Close the panel and emit `closed`.",
+          "select(option)": "Write `optionLabel` into the input, set value=optionValue, emit `selected`, close.",
+          "clear()": "Wipe input text + value, emit `cleared`, restore focus to the input."
+        }
+      },
+      {
+        "name": "DgDatepicker",
+        "kind": "component",
+        "selector": "dg-datepicker",
+        "path": "lib/datepicker/datepicker.ts",
+        "demo": "/datepicker",
+        "purpose": "Calendar / date picker — single or range, inline or popup, 3 views (date / month / year), button bar, week numbers, body portal.",
+        "inputs": ["value", "selectionMode", "format", "keepInvalid", "minDate", "maxDate", "disabledDates", "disabledDays", "showOtherMonths", "selectOtherMonths", "showWeek", "weekLabel", "firstDayOfWeek", "inline", "showButtonBar", "todayLabel", "clearLabel", "clearable", "invalid", "fluid", "disabled", "readonlyInput", "size", "variant", "appendTo", "locale", "rangeSeparator", "placeholder"],
+        "outputs": ["opened", "closed", "selectedChange", "monthChange", "yearChange"],
+        "field_class": "dg-datepicker__field",
+        "cva": true,
+        "templates": ["dgDatepickerDate"],
+        "uses": ["DgInputMask (mask derived from format)"],
+        "methods": {
+          "toggle()": "Open if closed, close if open (no-op when disabled / inline).",
+          "openPanel()": "Open the calendar panel; emit `opened`.",
+          "close()": "Close panel; reset view back to 'date' so next open starts on the date grid.",
+          "prev()": "Step backwards by the current view's unit (month / year / decade).",
+          "next()": "Step forwards by the current view's unit (month / year / decade).",
+          "setView(v)": "Switch view: 'date' | 'month' | 'year'. Emits monthChange/yearChange when relevant.",
+          "selectMonth(month)": "From month view: pick `month`, return to date view at that month.",
+          "selectYear(year)": "From year view: pick `year`, advance to month view of that year.",
+          "prevMonth()": "Move calendar one month earlier (date view).",
+          "nextMonth()": "Move calendar one month later (date view).",
+          "goToday()": "Jump the visible month to today; in single mode, also select today.",
+          "clearAll()": "Clear the bound value and close (no-op for inline).",
+          "clear(event)": "Wrapper used by the × button; stops propagation then clears."
+        }
+      },
+      {
+        "name": "DgNavMenu",
+        "kind": "component",
+        "selector": "dg-nav-menu",
+        "path": "lib/nav-menu/nav-menu.ts",
+        "demo": "/nav-menu",
+        "purpose": "Hierarchical menubar / sidebar / tabs — PrimeNG-aligned MenuItem with command/url/items, mobile drawer, multi-level submenus.",
+        "inputs": ["model", "value", "orientation", "variant", "size", "autoDisplay", "autoHide", "autoHideDelay", "breakpoint", "fluid", "closeOnSelect", "id", "ariaLabel", "mobileActive"],
+        "outputs": ["itemClick", "opened", "closed", "onFocus", "onBlur"],
+        "templates": ["dgNavMenuItem", "dgNavMenuStart", "dgNavMenuEnd", "dgNavMenuSubmenuIcon"],
+        "item_shape": "MenuItem-aligned: label, icon, value (active key), command, url, target, routerLink, items, expanded, disabled, visible, escape, separator, badge, tooltip, id, tabindex, style, styleClass, iconClass, labelClass, linkClass, badgeStyleClass, data",
+        "methods": {
+          "toggleMobile(event)": "Toggle the mobileActive drawer state (only meaningful below the breakpoint)."
+        }
+      },
+      {
+        "name": "DgTable",
+        "kind": "component",
+        "selector": "dg-table",
+        "path": "lib/table/table.ts",
+        "demo": "/table",
+        "purpose": "Div-based virtual-scrolling table with client/server/cursor pagination, bottom-anchor sizing, slot-customizable paginator.",
+        "inputs": ["value", "columns", "rowHeight", "scrollHeight", "bufferSize", "virtualScroll", "trackBy", "pagination", "pageSize", "currentPage", "pageSizeOptions", "totalRecords", "loading", "cursorField", "cursorPrevDisabled", "cursorNextDisabled", "bottomAnchor", "minHeight", "slotOrder", "rowsLabel", "showingLabel", "ofLabel", "emptyLabel"],
+        "outputs": ["pageChange", "cursorChange"],
+        "templates": ["dgColumn (per-column)", "dgPaginatorInfo", "dgPaginatorNav", "dgPaginatorPageSize", "dgTablePaginator (full replace)"],
+        "methods": {
+          "scrollToIndex(index)": "Scroll the virtual viewport so the row at `index` is in view (clamped to data length)."
+        }
+      },
+      {
+        "name": "DgTableBottomAnchor",
+        "kind": "directive",
+        "selector": "[dgTableBottomAnchor]",
+        "path": "lib/table/table-bottom-anchor.ts",
+        "purpose": "Marker that DgTable observes (ResizeObserver) to fit its height to a given anchor's top position."
+      }
+    ]
+  },
+  "demo_app": {
+    "path": "src/app",
+    "shell": {
+      "component": "App",
+      "path": "app.ts",
+      "html": "app.html",
+      "scss": "app.scss",
+      "encapsulation": "None",
+      "layout": "Grid: sidebar (16rem, scrolls independently) | main (overflow auto, scrollbar at viewport right edge).",
+      "uses": ["DgNavMenu (sidebar)", "AppSearch (search box)", "RouterOutlet"]
+    },
+    "prerender": {
+      "mode": "static (outputMode in angular.json) — every route in app.routes.ts is prerendered to its own index.html at build time. No runtime SSR server; output is static files servable by any CDN / static host.",
+      "entry_files": [
+        "src/main.server.ts — bootstrap fn MUST forward BootstrapContext: `(ctx) => bootstrapApplication(App, config, ctx)`. Without forwarding ctx the build fails NG0401 'Missing Platform' during route extraction.",
+        "src/app/app.config.server.ts — provideServerRendering(withRoutes(serverRoutes)) merged with browser appConfig.",
+        "src/app/app.routes.server.ts — single `{ path: '**', renderMode: RenderMode.Prerender }` rule; the route extractor walks the client router config (app.routes.ts) and prerenders each match.",
+        "src/app/app.config.ts — provideClientHydration(withEventReplay()) so the prerendered HTML hydrates without flicker and queued events replay after JS loads."
+      ],
+      "angular_json_keys": ["build.options.server: 'src/main.server.ts'", "build.options.outputMode: 'static'"],
+      "deps": ["@angular/ssr@21.2.10", "@angular/platform-server@21.2.11"],
+      "output_layout": "dist/dungeon-ui-libs/browser/<route>/index.html for each route + prerendered-routes.json manifest. index.csr.html is the client-side-render fallback shell."
+    },
+    "routes": [
+      { "path": "/", "page": "HomePage", "file": "pages/home/home-page.ts" },
+      { "path": "/buttons", "page": "ButtonsPage", "file": "pages/buttons/buttons-page.ts" },
+      { "path": "/input-text", "page": "InputTextPage", "file": "pages/input-text/input-text-page.ts" },
+      { "path": "/input-mask", "page": "InputMaskPage", "file": "pages/input-mask/input-mask-page.ts" },
+      { "path": "/input-number", "page": "InputNumberPage", "file": "pages/input-number/input-number-page.ts" },
+      { "path": "/input-group", "page": "InputGroupPage", "file": "pages/input-group/input-group-page.ts" },
+      { "path": "/icon-field", "page": "IconFieldPage", "file": "pages/icon-field/icon-field-page.ts" },
+      { "path": "/dialog", "page": "DialogPage", "file": "pages/dialog/dialog-page.ts" },
+      { "path": "/dropdown", "page": "DropdownPage", "file": "pages/dropdown/dropdown-page.ts" },
+      { "path": "/autocomplete", "page": "AutocompletePage", "file": "pages/autocomplete/autocomplete-page.ts" },
+      { "path": "/checkbox", "page": "CheckboxPage", "file": "pages/checkbox/checkbox-page.ts" },
+      { "path": "/radio", "page": "RadioPage", "file": "pages/radio/radio-page.ts" },
+      { "path": "/datepicker", "page": "DatepickerPage", "file": "pages/datepicker/datepicker-page.ts" },
+      { "path": "/table", "page": "TablePage", "file": "pages/table/table-page.ts" },
+      { "path": "/nav-menu", "page": "NavMenuPage", "file": "pages/nav-menu/nav-menu-page.ts" },
+      { "path": "/focus-trap", "page": "FocusTrapPage", "file": "pages/focus-trap/focus-trap-page.ts" }
+    ],
+    "search": {
+      "component": "AppSearch",
+      "file": "search/app-search.ts",
+      "index_file": "search/search-index.ts",
+      "purpose": "Static curated search index (~50 entries). Filters by title + page + keywords; redirects to route. Keyboard nav (↑↓/Enter/Esc)."
+    },
+    "demo_dialogs": {
+      "path": "demo-dialogs/",
+      "components": ["DemoConfirm", "DemoForm", "DemoInfo"],
+      "purpose": "3 example components opened via DgDialogService — used by /dialog page."
+    }
+  },
+  "relationships": [
+    { "from": "DgDialog", "rel": "uses", "to": "DgFocusTrap", "via": "[dgFocusTrap] on <dialog>" },
+    { "from": "DgDatepicker", "rel": "uses", "to": "DgInputMask", "via": "[dgInputMask]=mask() on trigger input" },
+    { "from": "DgInputGroup", "rel": "composes", "to": "DgInputText | DgInputNumber | DgDropdown | DgDatepicker | DgButton | DgInputGroupAddon", "via": "global SCSS targeting __field/__trigger/__addon classes" },
+    { "from": "DgIconField", "rel": "overlays-on", "to": "DgInputText | DgInputNumber | DgDropdown | DgDatepicker", "via": "absolute-positioned icon + reserved padding on field classes" },
+    { "from": "DgDialogService", "rel": "creates", "to": "DgDialog (host) + user component", "via": "createComponent into DgDialogHost slot" },
+    { "from": "App.shell", "rel": "uses", "to": "DgNavMenu", "via": "<dg-nav-menu> sidebar with routerLink-derived value" },
+    { "from": "AppSearch", "rel": "navigates-to", "to": "any /:route", "via": "Router.navigateByUrl(entry.route) on Enter or click" }
+  ],
+  "primeng_alignment": {
+    "rationale": "dungeon-ui mirrors PrimeNG's component shape (input names, MenuItem, MenuItemCommandEvent) so users coming from PrimeNG learn the API in minutes — without bringing PrimeNG as a runtime dep.",
+    "primeng_ref_path": "../primeng-ref (sibling repo, ingested in RAG with project_id=primeng)",
+    "components_modelled_after": {
+      "DgButton": "p-button (subset)",
+      "DgInputText": "p-inputtext",
+      "DgInputMask": "p-inputmask (append + slot modes)",
+      "DgInputNumber": "p-inputnumber (subset: no time picker / no advanced repeat)",
+      "DgInputGroup": "p-inputgroup + p-inputgroupaddon",
+      "DgIconField": "p-iconfield + p-inputicon",
+      "DgDropdown": "p-dropdown / p-select (subset)",
+      "DgAutocomplete": "p-autoComplete (single-select subset: no multi-select chips, no virtual scroll, no group)",
+      "DgCheckbox": "p-checkbox (binary + multi/group modes, indeterminate, custom-icon template; subset — no parent context provider, no autofocus, no inputStyle/Class)",
+      "DgRadio": "p-radioButton (subset — single-select with shared signal/CVA binding + DgRadioRegistry sibling-sync by `name`; no autoFocus, no per-radio tabindex management)",
+      "DgDatepicker": "p-datepicker (subset: no time picker / no multi-month / no touch UI)",
+      "DgNavMenu": "p-menubar (3-view = month / year / decade adapted)",
+      "DgDialog": "p-dialog (native <dialog> instead of overlay engine)",
+      "DgFocusTrap": "pFocusTrap (sentinel-pair pattern)"
+    }
+  },
+  "deliberately_skipped": {
+    "DgInputNumber": ["long-press repeat on spinner buttons", "scientific notation", "ariaRequired", "autofocus"],
+    "DgDatepicker": ["time picker (showTime/hourFormat/stepHour)", "multiple selection mode", "multi-month view", "touch UI"],
+    "DgAutocomplete": ["multi-select with chips", "virtual scroll over suggestions", "group/category headers", "auto-highlight on first option"],
+    "DgCheckbox": ["pTemplate('icon') legacy template (use dgCheckboxIcon instead)", "autofocus", "inputStyle / inputClass / styleClass passthrough", "ariaLabelledBy (use plain aria-labelledby attr if needed)", "parent-aware group context provider (consumers manage the array via reactive forms / signals)"],
+    "DgRadio": ["autofocus", "pTemplate('icon') legacy template (use dgRadioIcon instead)", "inputStyle / inputClass / styleClass passthrough", "ariaLabelledBy (use plain aria-labelledby attr if needed)"],
+    "general": ["i18n beyond Intl-driven labels", "RTL (untested)", "form validators inside library (consumers wire validators externally)"]
+  },
+  "rag": {
+    "db": "db/rag.db",
+    "default_project_id": "default",
+    "active_projects": ["dungeon-ui", "primeng"],
+    "primeng_ref_path": "../primeng-ref/packages/primeng/src",
+    "primeng_ref_layout": "Each component lives at packages/primeng/src/<name>/ (e.g. autocomplete, datepicker, menubar). Spec files at packages/primeng/src/<name>/<name>.spec.ts.",
+    "ingest_recipe": "Use mcp__dungeon-rag__rag_ingest with explicit project_id when adding new sources. project_id='dungeon-ui' for our lib + docs; project_id='primeng' for ../primeng-ref/**.",
+    "memory_rule": "After any change under projects/dungeon-ui/src/lib/** or public-api.ts: (1) update docs/dungeon-ui-overview.md, (2) update knowledge-graph.json (library.exports + relevant patterns/skipped/alignment sections), (3) re-ingest lib path + docs/ into RAG with project_id='dungeon-ui'.",
+    "primeng_explore_rule": "When exploring a primeng component (to model a new dungeon-ui counterpart, or to compare API), ingest its folder with project_id='primeng' BEFORE deep-reading: mcp__dungeon-rag__rag_ingest path='../primeng-ref/packages/primeng/src/<name>'. Future agents can then RAG-query the same component without re-walking the FS.",
+    "primeng_indexed": {
+      "purpose": "Registry of primeng-ref folders already ingested into RAG. Check this BEFORE rag_query to avoid the miss-then-ingest-then-query round-trip; if the target is listed, query directly. Update this list whenever rag_ingest runs against ../primeng-ref.",
+      "components": ["autocomplete", "checkbox", "radiobutton"]
+    }
+  },
+  "model_orchestration": {
+    "purpose": "Cost / latency optimization. Route mechanical sub-tasks to the lightest model that can do the job; reserve heavier models for design + implementation. Parallelize independent sub-tasks via multiple tool calls in one message.",
+    "models": {
+      "haiku": {
+        "id": "claude-haiku-4-5",
+        "use_for": "Single-shot lookups, status checks, JSON validation runs, simple ingest commands. Fastest + cheapest.",
+        "examples": ["mcp__dungeon-rag__rag_status", "node scripts/validate-graph.mjs", "single-file Read for confirmation", "looking up vi_aliases entry"]
+      },
+      "sonnet": {
+        "id": "claude-sonnet-4-6",
+        "use_for": "Mechanical structured edits where the SHAPE is dictated by an existing template. Most subagent work falls here.",
+        "examples": ["write a showcase page using <closest-sibling>-page.ts as the template", "append an entry to library.exports following the existing schema", "add a route + nav item + search-index rows", "append a docs section using the existing component-section template", "rename a CSS class across files"]
+      },
+      "opus": {
+        "id": "claude-opus-4-7",
+        "use_for": "Steps where bad reasoning produces broken code (not just badly-formatted code). Design + implementation + non-trivial bug diagnosis. Cross-file reasoning.",
+        "examples": ["DESIGN scope-down (which p-X features map cleanly, which to deliberately_skip, edge cases)", "IMPLEMENT a new dg-X by translating the p-X API to project conventions while preserving CVA / signal / OnPush patterns", "DIAGNOSE a bug whose root cause spans multiple files or relies on Angular timing (effect, change detection, DI scope)"]
+      }
+    },
+    "parallelization_groups": {
+      "add_component_step_8": "Showcase wiring splits into 4 independent edits — pages/<name>/<name>-page.ts, app.routes.ts, app.ts (nav model), search/search-index.ts. Spawn up to 4 parallel Agent calls (model=sonnet) in ONE message OR do them inline if the diff is small.",
+      "add_component_step_11": "Two builds independent: `ng build dungeon-ui` (lib only) + `ng build` (showcase prod). Issue both Bash tool calls in ONE message.",
+      "add_component_step_12": "Two ingests independent: rag_ingest projects/dungeon-ui/src + rag_ingest docs/. Call both MCP tools in ONE message.",
+      "fix_bug_step_4_5_6": "When the fix is mechanical, build verification + graph update + re-ingest can fan out: Bash(ng build), Edit(graph.json), MCP(rag_ingest) — same message.",
+      "constraint": "Never parallelize edits to the SAME file — Edit tool conflicts. Parallelize across DIFFERENT files only."
+    },
+    "workflow_step_models": {
+      "add_component": {
+        "1_clarify": "main",
+        "2_load_context": "main (graph.json is already in context after step 1)",
+        "3_rag_query_lib": "main OR delegate to haiku — single tool call either way",
+        "4_rag_query_primeng": "main — registry check + conditional ingest",
+        "5_design_scope_down": "opus — produces deliberately_skipped + IN/OUT decisions",
+        "6_implement": "opus — writes lib/<name>/<name>.ts following closest-sibling pattern; reads multiple files",
+        "7_export": "sonnet — single targeted Edit on public-api.ts",
+        "8_showcase": "sonnet × 4 parallel (page / route / nav / search-index)",
+        "9_docs": "sonnet — append section to dungeon-ui-overview.md following template",
+        "10_update_graph": "sonnet — append entry + alignment + skipped + route + (if applicable) primeng_indexed",
+        "11_build_verify": "main + 2 parallel Bash (lib + showcase prod)",
+        "12_re_ingest": "main + 2 parallel MCP calls (lib path + docs path)"
+      },
+      "fix_bug": {
+        "1_locate": "main — rag_query + Read",
+        "2_diagnose": "opus — full file Read + cross-file reasoning",
+        "3_fix": "opus if root cause is non-obvious; sonnet if the patch is mechanical (e.g. swap a CSS selector, fix a typo, retarget a regex)",
+        "4_verify": "main + Bash",
+        "5_update_graph": "sonnet — only if API surface changed (input/output/method/scope-down)",
+        "6_re_ingest": "main + parallel MCP calls"
+      }
+    },
+    "principles": [
+      "Default to Sonnet for delegated subagent work — handles ~80 % of mechanical tasks well and is significantly cheaper than Opus.",
+      "Reserve Opus for steps 5 + 6 (design + implementation) of add_component and step 2 (diagnose) of fix_bug. Bad reasoning at these steps produces broken code; saving cost on a wrong implementation isn't a win.",
+      "Parallelize aggressively across DIFFERENT files. Same-file edits must serialize.",
+      "When delegating, the subagent prompt must be SELF-CONTAINED: include the closest-sibling file path (from rag_query result), the scope-down list, links to the graph sections (vi_aliases / patterns / style_optimization_recipes) that the subagent should follow. Subagents start with no conversation context."
+    ]
+  },
+  "workflows": {
+    "bootstrap": {
+      "purpose": "First-time / fresh-clone setup: wire RAG so every later workflow can rely on it. Run once per environment.",
+      "steps": [
+        "1. Verify the local llama.cpp servers are up: mcp__dungeon-rag__rag_status. Both URLs must respond and total_chunks must be readable. If status fails → start the embedding + LLM servers per the dungeon-rag MCP server README before continuing.",
+        "2. Ingest dungeon-ui source: mcp__dungeon-rag__rag_ingest path='projects/dungeon-ui/src' project_id='dungeon-ui'.",
+        "3. Ingest docs: mcp__dungeon-rag__rag_ingest path='docs' project_id='dungeon-ui'.",
+        "4. Ingest the showcase app (so demo-page patterns are searchable): mcp__dungeon-rag__rag_ingest path='src/app' project_id='dungeon-ui'.",
+        "5. Optional but recommended — bulk-ingest commonly-needed primeng components into project_id='primeng'. Use the patterns.primeng_indexed.components list as the seed set; subsequent add_component runs will extend it.",
+        "6. Run scripts/validate-graph.mjs (or npm run validate:graph) to confirm graph.json shape matches the filesystem. Fix any drift it reports BEFORE shipping changes built on top of stale info."
+      ]
+    },
+    "add_component": {
+      "purpose": "Standard flow for adding a new dungeon-ui component modelled after a PrimeNG counterpart. Optimized to minimize tokens via RAG instead of broad FS scans.",
+      "steps": [
+        "1. [main] CLARIFY input: confirm the user's component name + target PrimeNG model (default: same name, e.g. 'autocomplete' → p-autoComplete).",
+        "2. [main] LOAD context: read this knowledge-graph.json (already in context if you read it once) to see existing patterns, exports, primeng_alignment, deliberately_skipped, vi_aliases, primeng_indexed.",
+        "3. [haiku|main] RAG-query our lib: mcp__dungeon-rag__rag_query project_id='dungeon-ui' for the closest existing component. Surfaces patterns to copy: CVA, body-portal, panelWidth, optionLabel/Value getter, template directives, scss conventions.",
+        "4. [main] RAG-query primeng-ref: FIRST check rag.primeng_indexed.components — if the target name isn't there, run mcp__dungeon-rag__rag_ingest path='../primeng-ref/packages/primeng/src/<name>' project_id='primeng' AND append the name to primeng_indexed.components in this graph. THEN mcp__dungeon-rag__rag_query project_id='primeng' for the target component's API. Saves a query round-trip when the answer would have been empty.",
+        "5. [opus] DESIGN scope-down: list which PrimeNG features will be supported and which deliberately skipped; record under deliberately_skipped[ComponentName]. Reasoning-heavy — bad scope-down produces broken API.",
+        "6. [opus] IMPLEMENT: create lib/<name>/ with <name>.ts + <name>-defs.ts + <name>.scss + <name>.spec.ts + index.ts. Mirror style of the closest sibling. Use signals (input/model/output/signal/computed/effect), OnPush, booleanish for boolean inputs, ControlValueAccessor when value-bearing. Cross-file reasoning required.",
+        "7. [sonnet] EXPORT: add to projects/dungeon-ui/src/public-api.ts. Single Edit.",
+        "8. [sonnet × 4 parallel] SHOWCASE: pages/<name>/<name>-page.ts + app.routes.ts + app.ts nav + search/search-index.ts. Four DIFFERENT files — fan out. See model_orchestration.parallelization_groups.add_component_step_8.",
+        "9. [sonnet] DOCS: append a section to docs/dungeon-ui-overview.md following the existing component-section template (Inputs / Outputs / Templates / Behavior / Usage).",
+        "10. [sonnet] UPDATE this graph: add to library.exports, update demo_app.routes, primeng_alignment.components_modelled_after, deliberately_skipped, patterns.forms_cva / body_portal / vi_aliases / primeng_indexed if applicable.",
+        "11. [main + 2 parallel Bash] BUILD verify: ng build dungeon-ui (lib) AND ng build (showcase production) — issue both in one message. All component .scss must stay under the 8kB error budget. Then run npm run validate:graph.",
+        "12. [main + 2 parallel MCP] RE-INGEST: mcp__dungeon-rag__rag_ingest for projects/dungeon-ui/src AND docs/ (both project_id='dungeon-ui') in one message. Verify with rag_status (chunk count rises) + a confirmation rag_query."
+      ],
+      "forced_inputs_for_AI": [
+        "Read knowledge-graph.json once at the start — every step below assumes it.",
+        "Use rag_query before broad FS scans — the index already covers our lib + docs + primeng-ref. Reserve grep/glob for after a focused RAG hit, not as the first move.",
+        "Copy patterns from the closest existing component, don't invent new conventions per component.",
+        "rag_query identifies the FILE, not the implementation. After a focused hit, ALWAYS Read the file (or the relevant range) for full context before editing — chunks are method-granular and miss surrounding declarations.",
+        "If the first rag_query returns mostly unrelated chunks (e.g. a CVA query lands on a NavMenu template-def), broaden top_k to 8–10 and add the file-class as a keyword (e.g. 'DgInputText input model writeValue') instead of falling back to grep.",
+        "Honor the [model: X] tag on each step — delegate via the Agent tool with that model. Spawn parallel Agent calls in ONE message when steps target different files (see model_orchestration.parallelization_groups). Steps tagged [main] stay on the orchestrator; steps tagged [haiku|sonnet|opus] route to that model."
+      ]
+    },
+    "fix_bug": {
+      "purpose": "Standard flow when the user reports a bug (visual glitch, runtime error, type error).",
+      "steps": [
+        "1. [main] LOCATE: rag_query project_id='dungeon-ui' for the symptom or the visible CSS class / public API name. Open the file at the returned path; only fall back to grep if RAG misses.",
+        "2. [opus] DIAGNOSE: read the file fully; confirm the failing logic. If the bug touches CSS, also re-read the SCSS — Angular Emulated encapsulation, !important conventions, component-style budgets all matter. Cross-file reasoning often needed.",
+        "3. [opus|sonnet] FIX: minimal change — don't refactor surrounding code. Use opus when root cause is non-obvious; sonnet when patch is mechanical (swap a CSS selector, fix a typo, retarget a regex). If the same anti-pattern exists in a sibling component, fix that too (one report → bulk fix), but only if the fix is mechanical.",
+        "4. [main + Bash] VERIFY: ng build dungeon-ui and (when CSS changed) ng build for the showcase, watching the SCSS budget warnings. Run npm run validate:graph if structure changed.",
+        "5. [sonnet] UPDATE knowledge-graph.json IF the fix changes a documented input/output, adds/removes a pattern, or invalidates an entry under deliberately_skipped. Skip the update for pure-visual fixes that don't change the API surface.",
+        "6. [main + parallel MCP] RE-INGEST when graph.json or any lib file changed: mcp__dungeon-rag__rag_ingest projects/dungeon-ui/src + docs/ (in one message)."
+      ]
+    }
+  },
+  "navigation_hints_for_ai": [
+    "FIRST move on any task: read this graph.json. SECOND move: rag_query (project_id='dungeon-ui' for our code, 'primeng' for upstream API reference). FS grep/glob is a fallback after a focused RAG hit — not the first move.",
+    "When asked about a component: locate by name in library.exports → read the listed path.",
+    "When asked 'where is X used': consult relationships array.",
+    "When generating new component: follow workflows.add_component step-by-step. Don't skip the rag_query of the closest sibling — that's where the patterns to copy live.",
+    "When fixing a bug: follow workflows.fix_bug. Re-ingest only if a lib file or graph.json changed; pure visual SCSS edits are still ingested (they're under projects/dungeon-ui/src), but graph.json doesn't always need an update for them.",
+    "When exploring a primeng component for the first time: ingest its folder via rag.primeng_explore_rule before deep-reading. Subsequent agents save tokens by RAG-querying instead of FS-scanning.",
+    "When the user describes a behavior in Vietnamese: FIRST consult patterns.vi_aliases to map the Vietnamese phrase to a Dg* component name, THEN rag_query with the English component name. Embedding models may miss VN phrasing; the alias table resolves it deterministically. Also fall back to src/app/search/search-index.ts (curated VN keywords for navigating to demo pages).",
+    "When uncertain about specificity / encapsulation issues: check input-group.scss header comment — it documents the equal-specificity gotcha and the !important convention.",
+    "When a component .scss exceeds 6kB compiled: see patterns.style_optimization_recipes for the three documented compression patterns before bumping the budget.",
+    "When delegating sub-tasks: see model_orchestration.workflow_step_models for which model handles each step. Default to Sonnet for mechanical edits; Opus for design + implementation; Haiku for simple lookups. Parallelize per model_orchestration.parallelization_groups."
+  ]
+}

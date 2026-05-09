@@ -1,0 +1,6 @@
+# Cloudflare Pages SPA fallback.
+# Known routes are prerendered as <route>/index.html and served natively
+# (cleanURLs). For unknown paths, fall back to the root index so the
+# Angular client router (which has `{ path: '**', redirectTo: '' }`)
+# can take over and redirect to home.
+/*  /index.html  200
