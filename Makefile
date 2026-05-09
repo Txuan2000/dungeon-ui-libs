@@ -6,13 +6,17 @@
 .PHONY: help install build build-lib dev test validate clean \
         rag-status rag-ingest \
         pages-dev pages-clean deploy deploy-preview \
-        cdn-bump cdn-deploy
+        cdn-bump cdn-deploy \
+        build-elements elements-deploy
 
 # Wrangler publish dir (mirrors `pages_build_output_dir` in wrangler.jsonc).
 PAGES_DIR := dist/dungeon-ui-libs/browser
 # Library bundle dir (ng-packagr output) — published as a CDN via a SECOND Pages project.
 CDN_DIR   := dist/dungeon-ui
 CDN_PROJ  := dungeon-ui-cdn
+# Web Components bundle dir (Angular Elements) — published as a THIRD Pages project.
+ELEMENTS_DIR  := dist/dungeon-ui-elements/browser
+ELEMENTS_PROJ := dungeon-ui-elements
 
 # ---- Help ---------------------------------------------------------------
 
@@ -84,6 +88,22 @@ cdn-deploy: cdn-bump build-lib ## Bump version, build, deploy library to https:/
 	@# to force consumers off a stale build, purge the Pages cache from the
 	@# Cloudflare dashboard or wait out the 30 days.
 	@printf '/*\n  Access-Control-Allow-Origin: *\n  Cache-Control: public, max-age=2592000\n' > $(CDN_DIR)/_headers
+	@# Pack a versioned tarball alongside fesm2022 so CLI consumers can:
+	@#   npm install https://$(CDN_PROJ).pages.dev/dungeon-ui-X.Y.Z.tgz
+	@rm -f $(CDN_DIR)/*.tgz
+	@cd $(CDN_DIR) && npm pack
 	@VERSION=$$(node -p 'require("./projects/dungeon-ui/package.json").version'); \
 	  echo "Deploying dungeon-ui v$$VERSION ..."; \
 	  npx wrangler pages deploy $(CDN_DIR) --project-name=$(CDN_PROJ) --commit-message="dungeon-ui v$$VERSION"
+
+# ---- Web Components bundle (Angular Elements) ---------------------------
+
+build-elements: ## Build the dungeon-ui-elements bundle (Angular Elements; Angular runtime + lib + CE wrappers in one ESM).
+	npx ng build dungeon-ui-elements
+
+elements-deploy: build-elements ## Deploy the elements bundle to https://$(ELEMENTS_PROJ).pages.dev.
+	@# CORS for cross-origin <script type="module"> + 30d cache (same as cdn-deploy).
+	@printf '/*\n  Access-Control-Allow-Origin: *\n  Cache-Control: public, max-age=2592000\n' > $(ELEMENTS_DIR)/_headers
+	@VERSION=$$(node -p 'require("./projects/dungeon-ui/package.json").version'); \
+	  echo "Deploying dungeon-ui-elements (lib v$$VERSION) ..."; \
+	  npx wrangler pages deploy $(ELEMENTS_DIR) --project-name=$(ELEMENTS_PROJ) --commit-message="dungeon-ui-elements (lib v$$VERSION)"

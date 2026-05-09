@@ -100,6 +100,45 @@
           }
         }
       }
+    },
+    "dungeon-ui-elements": {
+      "projectType": "application",
+      "root": "projects/dungeon-ui-elements",
+      "sourceRoot": "projects/dungeon-ui-elements/src",
+      "prefix": "dg",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "projects/dungeon-ui-elements/src/main.ts",
+            "index": "projects/dungeon-ui-elements/src/index.html",
+            "outputPath": "dist/dungeon-ui-elements",
+            "tsConfig": "projects/dungeon-ui-elements/tsconfig.app.json",
+            "polyfills": [],
+            "outputHashing": "none",
+            "namedChunks": false,
+            "sourceMap": false,
+            "optimization": true,
+            "extractLicenses": true
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "1MB",
+                  "maximumError": "2MB"
+                }
+              ]
+            },
+            "development": {
+              "optimization": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        }
+      }
     }
   }
 }

@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../out-tsc/elements",
+    "types": []
+  },
+  "include": [
+    "src/**/*.ts",
+    "../dungeon-ui/src/**/*.ts"
+  ],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "../dungeon-ui/src/**/*.spec.ts"
+  ]
+}

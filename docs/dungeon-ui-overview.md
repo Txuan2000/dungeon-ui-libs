@@ -12,6 +12,205 @@ Public API is exported from `projects/dungeon-ui/src/public-api.ts`.
 
 Selector prefix: `dg-`. Directive markers: `dg<Name>` or `dg<Name>Def`.
 
+## Loading from CDN
+
+Library deploy lên Cloudflare Pages (project `dungeon-ui-cdn`) sau mỗi
+`make cdn-deploy`. Output là FESM2022 (ESM-only), AOT-compiled Ivy — không
+có UMD bundle, không cần Angular compiler runtime cho code thư viện.
+
+- **ESM bundle**: `https://dungeon-ui-cdn.pages.dev/fesm2022/dungeon-ui.mjs`
+  (CORS `*`, cache `max-age=2592000` ~ 30 ngày)
+- **Tarball npm-installable**: `https://dungeon-ui-cdn.pages.dev/dungeon-ui-<version>.tgz`
+- **Types**: `https://dungeon-ui-cdn.pages.dev/types/dungeon-ui.d.ts`
+- **Bare imports cần map**: `@angular/core`, `@angular/core/rxjs-interop`,
+  `@angular/common`, `@angular/common/http`, `@angular/forms`,
+  `@angular/platform-browser`, `rxjs`, `rxjs/operators`, `tslib`. Khi consumer
+  tự định nghĩa root component (use case 1) thêm `@angular/compiler` để JIT.
+  Subpath `/http` và `/rxjs-interop` cần khai báo riêng vì esm.sh không tự
+  resolve subpath khi parent đã externalized.
+
+### Use case 1 — Plain HTML + import map (no bundler)
+
+→ Live demo: [`/cdn-example.html`](https://dungeon-ui.pages.dev/cdn-example.html)
+(source: [`public/cdn-example.html`](../public/cdn-example.html))
+
+```html
+<script type="importmap">
+{
+  "imports": {
+    "dungeon-ui": "https://dungeon-ui-cdn.pages.dev/fesm2022/dungeon-ui.mjs",
+
+    "@angular/core": "https://esm.sh/@angular/core@21.2.0?external=rxjs,tslib",
+    "@angular/core/": "https://esm.sh/@angular/core@21.2.0/",
+
+    "@angular/common": "https://esm.sh/@angular/common@21.2.0?external=@angular/core,rxjs,tslib",
+    "@angular/common/": "https://esm.sh/@angular/common@21.2.0/",
+
+    "@angular/compiler": "https://esm.sh/@angular/compiler@21.2.0?external=@angular/core,rxjs,tslib",
+    "@angular/compiler/": "https://esm.sh/@angular/compiler@21.2.0/",
+
+    "@angular/forms": "https://esm.sh/@angular/forms@21.2.0?external=@angular/core,@angular/common,rxjs,tslib",
+    "@angular/forms/": "https://esm.sh/@angular/forms@21.2.0/",
+
+    "@angular/platform-browser": "https://esm.sh/@angular/platform-browser@21.2.0?external=@angular/core,@angular/common,@angular/compiler,rxjs,tslib",
+    "@angular/platform-browser/": "https://esm.sh/@angular/platform-browser@21.2.0/",
+
+    "rxjs": "https://esm.sh/rxjs@7.8.0",
+    "rxjs/": "https://esm.sh/rxjs@7.8.0/",
+
+    "tslib": "https://esm.sh/tslib@2.6.0"
+  }
+}
+</script>
+<app-root></app-root>
+<script type="module">
+  import '@angular/compiler';
+  import { Component, signal, provideZonelessChangeDetection } from '@angular/core';
+  import { bootstrapApplication } from '@angular/platform-browser';
+  import { DgButton } from 'dungeon-ui';
+
+  // Factory-call form thay cho `@Component(...)` (decorator syntax không
+  // parse được trong plain JS).
+  const App = Component({
+    selector: 'app-root',
+    standalone: true,
+    imports: [DgButton],
+    template: `<dg-button label="Hello" severity="primary" (clicked)="hi()"/>`,
+  })(class { hi() { alert('clicked'); } });
+
+  bootstrapApplication(App, { providers: [provideZonelessChangeDetection()] });
+</script>
+```
+
+Lưu ý:
+- Browser support import maps: Chrome 89+, Safari 16.4+, Firefox 108+.
+- `?external=...` trên esm.sh là bắt buộc — không có nó, mỗi `@angular/*`
+  package sẽ bundle bản `@angular/core` riêng → vỡ DI singleton.
+- Pin version cụ thể (`@21.2.0`, `@7.8.0`) khớp với peer range để dedupe
+  cache esm.sh.
+- Zoneless: `provideZonelessChangeDetection()` thay zone.js, sample không
+  cần load `zone.js` riêng.
+- `@angular/compiler` chỉ cần khi consumer tự định nghĩa component (template
+  cần JIT-compile). Component của thư viện đã pre-compiled nên không cần
+  compiler để render chúng.
+- SRI (sub-resource integrity) không khả thi với esm.sh do response thay đổi
+  theo `?external`.
+
+### Use case 2 — Angular CLI app (npm install từ tarball)
+
+```bash
+npm install https://dungeon-ui-cdn.pages.dev/dungeon-ui-0.0.3.tgz
+```
+
+`package.json` của consumer sẽ ghi:
+
+```json
+{
+  "dependencies": {
+    "dungeon-ui": "https://dungeon-ui-cdn.pages.dev/dungeon-ui-0.0.3.tgz"
+  }
+}
+```
+
+Sau đó dùng như package thường:
+
+```ts
+import { Component } from '@angular/core';
+import { DgButton } from 'dungeon-ui';
+
+@Component({
+  selector: 'my-comp',
+  standalone: true,
+  imports: [DgButton],
+  template: `<dg-button label="Save" severity="success" />`,
+})
+export class MyComp {}
+```
+
+Khi nào dùng:
+- Prototype, internal app không muốn add npm registry/auth.
+- Test version mới trước khi publish lên npm.
+
+Khi không nên dùng:
+- Production lâu dài — không có version range, không SRI, phụ thuộc Pages
+  cache; bump version → đổi URL + `npm install` lại tay.
+
+Update version: chạy `make cdn-deploy` (sẽ bump version + build + push
+tarball + fesm2022 lên Pages).
+
+### Use case 3 — Web Components (no Angular knowledge needed)
+
+Approach đơn giản nhất cho host non-Angular (PHP, WordPress, plain HTML,
+static site generators). Bundle deploy gồm Angular runtime + library +
+custom-element wrappers, tự register tất cả `<dg-*>` tags khi script load.
+
+→ Live demo: [`/elements-example.html`](https://dungeon-ui.pages.dev/elements-example.html)
+(source: [`public/elements-example.html`](../public/elements-example.html))
+
+```html
+<script type="module" src="https://dungeon-ui-elements.pages.dev/main.js"></script>
+
+<dg-input-text id="name" placeholder="Tên"></dg-input-text>
+<dg-button id="btn" label="Chào" severity="primary"></dg-button>
+<p id="out"></p>
+
+<script>
+  document.getElementById('btn').addEventListener('clicked', () => {
+    document.getElementById('out').textContent =
+      'Xin chào, ' + document.getElementById('name').value + '!';
+  });
+</script>
+```
+
+**Tags available** (16 components):
+`dg-button`, `dg-input-text`, `dg-input-number`, `dg-input-group`,
+`dg-input-group-addon`, `dg-icon-field`, `dg-input-icon`, `dg-dialog`,
+`dg-table`, `dg-paginator`, `dg-checkbox`, `dg-radio`, `dg-dropdown`,
+`dg-autocomplete`, `dg-datepicker`, `dg-nav-menu`.
+
+**Property vs attribute** convention:
+- Primitive inputs (string/number/boolean): set qua attribute hoặc property.
+  ```html
+  <dg-button label="Save" severity="primary" disabled></dg-button>
+  ```
+- Object/array inputs (`columns`, `value` của `dg-table`; `options` của
+  `dg-dropdown`/`dg-autocomplete`; `model` của `dg-nav-menu`; v.v.): **phải**
+  set qua property — attribute chỉ accept string.
+  ```js
+  const t = document.querySelector('dg-table');
+  t.columns = [{ field: 'name', header: 'Name' }, ...];
+  t.value = [{ name: 'Alice' }, ...];
+  ```
+
+**Outputs** → DOM `CustomEvent` cùng tên Angular output. Truy cập payload
+qua `event.detail`:
+
+```js
+el.addEventListener('clicked', e => { /* e.detail là payload */ });
+el.addEventListener('valueChange', e => console.log(e.detail));
+```
+
+**Limitations** (so với CLI consumption):
+- 2 directives (`[dgInputMask]`, `[dgFocusTrap]`) **không** available — directives
+  không thành custom elements được. Cần Angular CLI consumption (use case 2).
+- 8 CVA components (`dg-input-text`, `dg-input-number`, `dg-checkbox`, `dg-radio`,
+  `dg-dropdown`, `dg-autocomplete`, `dg-datepicker`, ...): **không** support
+  `[formControl]`/`[(ngModel)]` (Angular-only directives). Quản lý state bằng
+  `el.value` property + `valueChange` event.
+- `dg-dialog`: không support `headerTemplate`/`footerTemplate` inputs
+  (TemplateRef không serialize được). Dùng các string inputs có sẵn.
+- `DgDialogService` imperative API (`dgDialog.open(...)`) **không** expose qua
+  bundle này — chỉ available khi consume qua npm/tarball.
+- Generic types (`DgTable<T>`, `DgDropdown<T>` etc.) erase ở runtime; TypeScript
+  consumers cần cast khi cần type-safety trên element references.
+
+**Bundle size**: ~150KB gzipped (Angular runtime zoneless + 16 components,
+tree-shaken). Cache 30 ngày trên Cloudflare CDN.
+
+**Deploy version mới**: `make elements-deploy` (build bundle + push lên
+`dungeon-ui-elements.pages.dev`). Lib version từ
+`projects/dungeon-ui/package.json` được dùng làm commit message tag.
+
 ## Components & Surfaces
 
 ### DgButton (`<dg-button>`)

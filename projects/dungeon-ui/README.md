@@ -41,6 +41,46 @@ Once the project is built, you can publish your library by following these steps
    npm publish
    ```
 
+## Loading from CDN
+
+Library này có 3 cách consume từ CDN, từ đơn giản nhất đến linh hoạt nhất:
+
+**1. Web Components (host non-Angular)** — đơn giản nhất, 1 script + dùng
+`<dg-*>` như HTML thường, không cần Angular knowledge:
+
+```html
+<script type="module" src="https://dungeon-ui-elements.pages.dev/main.js"></script>
+<dg-button label="Save" severity="primary"></dg-button>
+```
+
+Live demo: [`https://dungeon-ui.pages.dev/elements-example.html`](https://dungeon-ui.pages.dev/elements-example.html).
+Limitations: 2 directives (`[dgInputMask]`, `[dgFocusTrap]`) và Angular forms
+binding (`[formControl]`, `[(ngModel)]`) không support. Bundle ~150KB gzipped
+(kèm Angular runtime).
+
+**2. Angular CLI app** — install thẳng từ tarball thay vì npm registry:
+
+```bash
+npm install https://dungeon-ui-cdn.pages.dev/dungeon-ui-0.0.3.tgz
+```
+
+Full Angular API (forms, directives, services). Bundler tree-shake bình thường.
+
+**3. Plain HTML + import map** (Angular-savvy, no bundler) — FESM2022 ESM với
+import map mapping `@angular/*` qua esm.sh. Xem live demo
+[`https://dungeon-ui.pages.dev/cdn-example.html`](https://dungeon-ui.pages.dev/cdn-example.html)
+và source [`public/cdn-example.html`](../../public/cdn-example.html). Setup
+phức tạp hơn (~10 import map entries + `@angular/compiler` JIT) nhưng giữ full
+Angular runtime API.
+
+Hướng dẫn đầy đủ (3 use cases, property/event API cho web components, caveats)
+trong [`docs/dungeon-ui-overview.md` → Loading from CDN](../../docs/dungeon-ui-overview.md#loading-from-cdn).
+
+Publish version mới:
+
+- `make cdn-deploy` → push FESM2022 + tarball lên `dungeon-ui-cdn.pages.dev`.
+- `make elements-deploy` → push web components bundle lên `dungeon-ui-elements.pages.dev`.
+
 ## Running unit tests
 
 To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:

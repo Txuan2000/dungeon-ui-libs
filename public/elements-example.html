@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>dungeon-ui as Web Components — example</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.4rem; }
+    section { margin-top: 2rem; }
+    .row { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-top: .75rem; }
+    .out { margin-top: .75rem; color: #2563eb; }
+  </style>
+  <script type="module" src="https://dungeon-ui-elements.pages.dev/main.js"></script>
+</head>
+<body>
+  <h1>dungeon-ui — Web Components from CDN</h1>
+  <p>Không Angular setup, không import map. Chỉ 1 script, dùng <code>&lt;dg-*&gt;</code> như HTML thường.</p>
+
+  <section>
+    <h2>Button + input</h2>
+    <div class="row">
+      <dg-input-text id="name-input" placeholder="Tên của bạn"></dg-input-text>
+      <dg-button id="greet-btn" label="Chào" severity="primary"></dg-button>
+    </div>
+    <p id="greet-out" class="out"></p>
+  </section>
+
+  <section>
+    <h2>Severities</h2>
+    <div class="row">
+      <dg-button label="Primary" severity="primary"></dg-button>
+      <dg-button label="Success" severity="success"></dg-button>
+      <dg-button label="Warn" severity="warn"></dg-button>
+      <dg-button label="Danger" severity="danger"></dg-button>
+      <dg-button label="Outlined" severity="primary" variant="outlined"></dg-button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Checkbox + radio</h2>
+    <div class="row">
+      <dg-checkbox id="cb-agree" label="Đồng ý điều khoản"></dg-checkbox>
+    </div>
+    <p id="cb-out" class="out"></p>
+  </section>
+
+  <script>
+    // Components ↔ DOM:
+    //  - String/boolean/number inputs → set qua attribute hoặc element property.
+    //  - Object/array inputs (e.g. dg-table.columns, dg-dropdown.options) → set qua property only.
+    //  - Outputs → DOM CustomEvent cùng tên (clicked, valueChange, ...).
+    const nameInput = document.getElementById('name-input');
+    const greetBtn = document.getElementById('greet-btn');
+    const greetOut = document.getElementById('greet-out');
+
+    greetBtn.addEventListener('clicked', () => {
+      greetOut.textContent = 'Xin chào, ' + (nameInput.value || 'bạn') + '!';
+    });
+
+    const cb = document.getElementById('cb-agree');
+    const cbOut = document.getElementById('cb-out');
+    cb.addEventListener('valueChange', (e) => {
+      cbOut.textContent = e.detail ? 'Đã đồng ý.' : 'Chưa đồng ý.';
+    });
+  </script>
+</body>
+</html>

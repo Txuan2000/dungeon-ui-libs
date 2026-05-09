@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>dungeon-ui from CDN — example</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.4rem; }
+    p { margin-top: 1rem; }
+    .row { display: flex; gap: .75rem; align-items: center; margin-top: 1rem; flex-wrap: wrap; }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "dungeon-ui": "https://dungeon-ui-cdn.pages.dev/fesm2022/dungeon-ui.mjs",
+
+      "@angular/core": "https://esm.sh/@angular/core@21.2.0?external=rxjs,tslib",
+      "@angular/core/": "https://esm.sh/@angular/core@21.2.0/",
+
+      "@angular/common": "https://esm.sh/@angular/common@21.2.0?external=@angular/core,rxjs,tslib",
+      "@angular/common/": "https://esm.sh/@angular/common@21.2.0/",
+
+      "@angular/compiler": "https://esm.sh/@angular/compiler@21.2.0?external=@angular/core,rxjs,tslib",
+      "@angular/compiler/": "https://esm.sh/@angular/compiler@21.2.0/",
+
+      "@angular/forms": "https://esm.sh/@angular/forms@21.2.0?external=@angular/core,@angular/common,rxjs,tslib",
+      "@angular/forms/": "https://esm.sh/@angular/forms@21.2.0/",
+
+      "@angular/platform-browser": "https://esm.sh/@angular/platform-browser@21.2.0?external=@angular/core,@angular/common,@angular/compiler,rxjs,tslib",
+      "@angular/platform-browser/": "https://esm.sh/@angular/platform-browser@21.2.0/",
+
+      "rxjs": "https://esm.sh/rxjs@7.8.0",
+      "rxjs/": "https://esm.sh/rxjs@7.8.0/",
+
+      "tslib": "https://esm.sh/tslib@2.6.0"
+    }
+  }
+  </script>
+</head>
+<body>
+  <app-root>Loading dungeon-ui from CDN…</app-root>
+
+  <script type="module">
+    // Side-effect import: enables Angular JIT so the App component below
+    // (created with the factory-call form, no decorator syntax) gets compiled
+    // at runtime. Pre-compiled library components (DgButton, DgInputText) skip
+    // JIT and use their baked-in Ivy ɵcmp.
+    import '@angular/compiler';
+
+    import { Component, signal, provideZonelessChangeDetection } from '@angular/core';
+    import { bootstrapApplication } from '@angular/platform-browser';
+    import { DgButton, DgInputText } from 'dungeon-ui';
+
+    // Plain JS can't use `@Component(...)` decorator syntax. Use the factory
+    // form `Component({...})(class)` instead — same metadata, no syntax sugar.
+    const App = Component({
+      selector: 'app-root',
+      standalone: true,
+      imports: [DgButton, DgInputText],
+      template: `
+        <h1>Hello dungeon-ui from CDN</h1>
+        <p>Sample chạy hoàn toàn từ CDN — không bundler, không npm install.</p>
+        <div class="row">
+          <dg-input-text [(value)]="name" placeholder="Tên của bạn" />
+          <dg-button label="Chào" severity="primary" (clicked)="greet()" />
+        </div>
+        <p>{{ message() }}</p>
+      `,
+    })(class {
+      name = signal('');
+      message = signal('');
+      greet() {
+        this.message.set('Xin chào, ' + (this.name() || 'bạn') + '!');
+      }
+    });
+
+    bootstrapApplication(App, {
+      providers: [provideZonelessChangeDetection()],
+    });
+  </script>
+</body>
+</html>
