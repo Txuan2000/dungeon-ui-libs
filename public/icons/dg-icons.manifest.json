@@ -1,0 +1,243 @@
+{
+  "version": 1,
+  "generator": "scripts/build-icon-artifacts.mjs",
+  "generatedAt": "2026-05-13",
+  "iconCount": 54,
+  "viewBox": "0 0 14 14",
+  "cssClassMask": {
+    "base": "dgi",
+    "perIcon": "dgi-<name>",
+    "spin": "dgi--spin"
+  },
+  "cssClassFont": {
+    "base": "dgf",
+    "perIcon": "dgf-<name>",
+    "spin": "dgf--spin"
+  },
+  "font": {
+    "family": "dg-icons",
+    "format": [
+      "woff",
+      "truetype"
+    ],
+    "puaStart": "0xE001"
+  },
+  "icons": [
+    {
+      "name": "angle-double-down",
+      "codepoint": "0xE001"
+    },
+    {
+      "name": "angle-double-left",
+      "codepoint": "0xE002"
+    },
+    {
+      "name": "angle-double-right",
+      "codepoint": "0xE003"
+    },
+    {
+      "name": "angle-double-up",
+      "codepoint": "0xE004"
+    },
+    {
+      "name": "angle-down",
+      "codepoint": "0xE005"
+    },
+    {
+      "name": "angle-left",
+      "codepoint": "0xE006"
+    },
+    {
+      "name": "angle-right",
+      "codepoint": "0xE007"
+    },
+    {
+      "name": "angle-up",
+      "codepoint": "0xE008"
+    },
+    {
+      "name": "arrow-down",
+      "codepoint": "0xE009"
+    },
+    {
+      "name": "arrow-down-left",
+      "codepoint": "0xE00A"
+    },
+    {
+      "name": "arrow-down-right",
+      "codepoint": "0xE00B"
+    },
+    {
+      "name": "arrow-left",
+      "codepoint": "0xE00C"
+    },
+    {
+      "name": "arrow-right",
+      "codepoint": "0xE00D"
+    },
+    {
+      "name": "arrow-up",
+      "codepoint": "0xE00E"
+    },
+    {
+      "name": "ban",
+      "codepoint": "0xE00F"
+    },
+    {
+      "name": "bars",
+      "codepoint": "0xE010"
+    },
+    {
+      "name": "blank",
+      "codepoint": "0xE011"
+    },
+    {
+      "name": "calendar",
+      "codepoint": "0xE012"
+    },
+    {
+      "name": "caret-left",
+      "codepoint": "0xE013"
+    },
+    {
+      "name": "caret-right",
+      "codepoint": "0xE014"
+    },
+    {
+      "name": "check",
+      "codepoint": "0xE015"
+    },
+    {
+      "name": "chevron-down",
+      "codepoint": "0xE016"
+    },
+    {
+      "name": "chevron-left",
+      "codepoint": "0xE017"
+    },
+    {
+      "name": "chevron-right",
+      "codepoint": "0xE018"
+    },
+    {
+      "name": "chevron-up",
+      "codepoint": "0xE019"
+    },
+    {
+      "name": "exclamation-triangle",
+      "codepoint": "0xE01A"
+    },
+    {
+      "name": "eye",
+      "codepoint": "0xE01B"
+    },
+    {
+      "name": "eyeslash",
+      "codepoint": "0xE01C"
+    },
+    {
+      "name": "filter",
+      "codepoint": "0xE01D"
+    },
+    {
+      "name": "filter-fill",
+      "codepoint": "0xE01E"
+    },
+    {
+      "name": "filter-slash",
+      "codepoint": "0xE01F"
+    },
+    {
+      "name": "home",
+      "codepoint": "0xE020"
+    },
+    {
+      "name": "info-circle",
+      "codepoint": "0xE021"
+    },
+    {
+      "name": "minus",
+      "codepoint": "0xE022"
+    },
+    {
+      "name": "pencil",
+      "codepoint": "0xE023"
+    },
+    {
+      "name": "plus",
+      "codepoint": "0xE024"
+    },
+    {
+      "name": "refresh",
+      "codepoint": "0xE025"
+    },
+    {
+      "name": "search",
+      "codepoint": "0xE026"
+    },
+    {
+      "name": "search-minus",
+      "codepoint": "0xE027"
+    },
+    {
+      "name": "search-plus",
+      "codepoint": "0xE028"
+    },
+    {
+      "name": "sort-alt",
+      "codepoint": "0xE029"
+    },
+    {
+      "name": "sort-amount-down",
+      "codepoint": "0xE02A"
+    },
+    {
+      "name": "sort-amount-up-alt",
+      "codepoint": "0xE02B"
+    },
+    {
+      "name": "spinner",
+      "codepoint": "0xE02C"
+    },
+    {
+      "name": "star",
+      "codepoint": "0xE02D"
+    },
+    {
+      "name": "star-fill",
+      "codepoint": "0xE02E"
+    },
+    {
+      "name": "th-large",
+      "codepoint": "0xE02F"
+    },
+    {
+      "name": "times",
+      "codepoint": "0xE030"
+    },
+    {
+      "name": "times-circle",
+      "codepoint": "0xE031"
+    },
+    {
+      "name": "trash",
+      "codepoint": "0xE032"
+    },
+    {
+      "name": "undo",
+      "codepoint": "0xE033"
+    },
+    {
+      "name": "upload",
+      "codepoint": "0xE034"
+    },
+    {
+      "name": "window-maximize",
+      "codepoint": "0xE035"
+    },
+    {
+      "name": "window-minimize",
+      "codepoint": "0xE036"
+    }
+  ]
+}

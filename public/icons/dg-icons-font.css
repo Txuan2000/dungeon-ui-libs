@@ -1,0 +1,100 @@
+/* dungeon-ui icons — webfont build.
+ *
+ * Loads dg-icons.woff (modern) with dg-icons.ttf fallback. Glyphs occupy the
+ * Unicode Private Use Area starting at U+E001.
+ *
+ * Usage:
+ *   <i class="dgf dgf-check"></i>
+ *   <i class="dgf dgf-spinner dgf--spin"></i>
+ *
+ * Color follows `currentColor` (it is a font); resize via `font-size`.
+ */
+
+@font-face {
+  font-family: 'dg-icons';
+  src: url('./dg-icons.woff') format('woff'),
+       url('./dg-icons.ttf')  format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+.dgf {
+  font-family: 'dg-icons' !important;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  display: inline-block;
+  speak: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  vertical-align: -0.125em;
+}
+
+.dgf--spin {
+  animation: dgf-spin 1s linear infinite;
+  display: inline-block;
+  transform-origin: center;
+}
+
+@keyframes dgf-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.dgf-angle-double-down::before { content: '\e001'; }
+.dgf-angle-double-left::before { content: '\e002'; }
+.dgf-angle-double-right::before { content: '\e003'; }
+.dgf-angle-double-up::before { content: '\e004'; }
+.dgf-angle-down::before { content: '\e005'; }
+.dgf-angle-left::before { content: '\e006'; }
+.dgf-angle-right::before { content: '\e007'; }
+.dgf-angle-up::before { content: '\e008'; }
+.dgf-arrow-down::before { content: '\e009'; }
+.dgf-arrow-down-left::before { content: '\e00a'; }
+.dgf-arrow-down-right::before { content: '\e00b'; }
+.dgf-arrow-left::before { content: '\e00c'; }
+.dgf-arrow-right::before { content: '\e00d'; }
+.dgf-arrow-up::before { content: '\e00e'; }
+.dgf-ban::before { content: '\e00f'; }
+.dgf-bars::before { content: '\e010'; }
+.dgf-blank::before { content: '\e011'; }
+.dgf-calendar::before { content: '\e012'; }
+.dgf-caret-left::before { content: '\e013'; }
+.dgf-caret-right::before { content: '\e014'; }
+.dgf-check::before { content: '\e015'; }
+.dgf-chevron-down::before { content: '\e016'; }
+.dgf-chevron-left::before { content: '\e017'; }
+.dgf-chevron-right::before { content: '\e018'; }
+.dgf-chevron-up::before { content: '\e019'; }
+.dgf-exclamation-triangle::before { content: '\e01a'; }
+.dgf-eye::before { content: '\e01b'; }
+.dgf-eyeslash::before { content: '\e01c'; }
+.dgf-filter::before { content: '\e01d'; }
+.dgf-filter-fill::before { content: '\e01e'; }
+.dgf-filter-slash::before { content: '\e01f'; }
+.dgf-home::before { content: '\e020'; }
+.dgf-info-circle::before { content: '\e021'; }
+.dgf-minus::before { content: '\e022'; }
+.dgf-pencil::before { content: '\e023'; }
+.dgf-plus::before { content: '\e024'; }
+.dgf-refresh::before { content: '\e025'; }
+.dgf-search::before { content: '\e026'; }
+.dgf-search-minus::before { content: '\e027'; }
+.dgf-search-plus::before { content: '\e028'; }
+.dgf-sort-alt::before { content: '\e029'; }
+.dgf-sort-amount-down::before { content: '\e02a'; }
+.dgf-sort-amount-up-alt::before { content: '\e02b'; }
+.dgf-spinner::before { content: '\e02c'; }
+.dgf-star::before { content: '\e02d'; }
+.dgf-star-fill::before { content: '\e02e'; }
+.dgf-th-large::before { content: '\e02f'; }
+.dgf-times::before { content: '\e030'; }
+.dgf-times-circle::before { content: '\e031'; }
+.dgf-trash::before { content: '\e032'; }
+.dgf-undo::before { content: '\e033'; }
+.dgf-upload::before { content: '\e034'; }
+.dgf-window-maximize::before { content: '\e035'; }
+.dgf-window-minimize::before { content: '\e036'; }

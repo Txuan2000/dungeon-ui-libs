@@ -230,6 +230,211 @@ Usage:
 <dg-button label="Loading" loading />
 ```
 
+### DgIcon (`<dg-icon>`)
+Inline SVG icon component. 54 icons derived from PrimeNG's SVG icon set
+(`primeng-ref/packages/primeng/src/icons/`) — all share the `0 0 14 14`
+viewBox and use `currentColor`, so colour follows surrounding text and the
+icon scales cleanly inside buttons, inputs, menus, table cells, etc.
+
+Inputs:
+- `name` (required) — one of `DgIconName` (kebab-case, e.g. `'check'`,
+  `'chevron-down'`, `'search'`, `'times'`). Full list re-exported as
+  `DG_ICON_NAMES`.
+- `size` (number | string, default `14`) — px applied to `width`/`height`
+  on the inner `<svg>`. Strings allowed (`'1em'`, `'1.5rem'`).
+- `spin` (boolean) — applies a 1s linear infinite rotation. Pair with
+  `name="spinner"` for a loader.
+- `ariaLabel` — when provided, sets `role="img"` + `aria-label` and drops
+  `aria-hidden`. Otherwise the icon is decorative (`aria-hidden="true"`).
+
+Registry (`lib/icon/icons-data.ts`):
+- `DG_ICONS: Record<DgIconName, string>` — raw SVG body strings (path /
+  group elements only, no enclosing `<svg>`). Useful when you need to
+  inline an icon outside the component (e.g. a `<button [innerHTML]>` for
+  email templates that can't run Angular).
+- `DG_ICON_NAMES` — readonly array of all valid names, ordered as in
+  PrimeNG's source.
+- `DgIconName` — string-literal union.
+- Regenerate with `node scripts/generate-icons.mjs` after syncing
+  `primeng-ref` — the script reads `primeng-ref/packages/primeng/src/icons/`
+  and re-emits `icons-data.ts`.
+
+Implementation note: the SVG body is injected imperatively via
+`viewChild` + `effect` setting `innerHTML` on the inner `<svg>`. Angular's
+`[innerHTML]` sanitizer strips the SVG namespace; setting `innerHTML`
+directly on an SVG element lets the browser reparse children in the
+correct namespace. The bodies are bundled constants (no user input), so
+sanitization is not needed.
+
+Usage:
+```html
+<dg-icon name="check" />
+<dg-icon name="search" [size]="20" />
+<dg-icon name="spinner" spin ariaLabel="Loading" />
+<dg-button label="Save"><dg-icon name="check" /></dg-button>
+```
+
+### Icon CSS / Font builds (no Angular)
+Cùng bộ 54 icons trên cũng được build ra 2 file CSS-class độc lập để dùng
+trong môi trường không có Angular (plain HTML, email, React/Vue, web
+component khác). Sinh ra bởi `scripts/build-icon-artifacts.mjs` (đọc
+`DG_ICONS` registry) và ship trong CDN tarball.
+
+Output paths:
+- `dist/dungeon-ui/icons/dg-icons.css` (~150 KB) — mask-image classes, data-URI SVG inline.
+- `dist/dungeon-ui/icons/dg-icons.min.css` (~150 KB) — minified.
+- `dist/dungeon-ui/icons/dg-icons-font.css` (~3 KB) — `@font-face` + `.dgf-<name>::before { content: '\eXXX' }`.
+- `dist/dungeon-ui/icons/dg-icons.ttf` (~11 KB) + `dg-icons.woff` (~7 KB).
+- `dist/dungeon-ui/icons/dg-icons.manifest.json` — name + codepoint map.
+
+Run `make icons-build` to regenerate (emits to both `dist/dungeon-ui/icons/`
+and `public/icons/` — the second copy is for the showcase to serve at
+`/icons/...`). `make cdn-deploy` runs it automatically before publishing the
+library tarball, so consumers get the artifacts inside the npm package.
+
+CDN URLs (after `make cdn-deploy`):
+- `https://dungeon-ui-cdn.pages.dev/icons/dg-icons.css`
+- `https://dungeon-ui-cdn.pages.dev/icons/dg-icons-font.css`
+- `https://dungeon-ui-cdn.pages.dev/icons/dg-icons.woff` (auto-loaded by the font CSS)
+- `https://dungeon-ui-cdn.pages.dev/icons/dg-icons.ttf`
+
+#### 1. Mask-image (`dg-icons.css`) — khuyến nghị
+Class prefix: `.dgi` (base) + `.dgi-<name>`. Base class sets
+`background-color: currentColor; mask-image: …; mask-size: contain`, so the
+icon inherits text color and resizes via `font-size` (1em × 1em by default).
+
+```html
+<link rel="stylesheet" href="https://dungeon-ui-cdn.pages.dev/icons/dg-icons.css">
+<i class="dgi dgi-check"></i>
+<i class="dgi dgi-spinner dgi--spin"></i>
+<span style="font-size: 24px; color: #1d4ed8">
+  <i class="dgi dgi-search"></i> Tìm
+</span>
+```
+
+Tradeoff: single 150 KB CSS file (data-URI for every icon). Not tree-shakable
+— bring in only icons you need? Then prefer `<dg-icon>` import-by-name.
+
+#### 2. Webfont (`dg-icons-font.css`) — fallback
+Class prefix: `.dgf` + `.dgf-<name>`. Glyphs assigned to PUA codepoints from
+`U+E001`. Use when mask-image isn't ideal (email clients, some print
+pipelines, or you prefer PrimeIcons-style ergonomics).
+
+```html
+<link rel="stylesheet" href="https://dungeon-ui-cdn.pages.dev/icons/dg-icons-font.css">
+<i class="dgf dgf-check"></i>
+<i class="dgf dgf-spinner dgf--spin"></i>
+```
+
+The font CSS references `./dg-icons.woff` (modern) + `./dg-icons.ttf` (fallback)
+relative to itself — host both files together. Total ~21 KB on the wire.
+
+#### Live demo
+`/icon` page in the showcase loads both CSS builds dynamically (via
+`DOCUMENT`-injected `<link>` tags in `IconPage` constructor — not in
+`index.html`, so the Angular build doesn't try to inline them) and shows
+side-by-side renderings with a comparison table.
+
+Click any icon in the gallery to open `IconDetailDialog`
+(`src/app/demo-dialogs/icon-detail-dialog.ts`, opened via `DgDialogService`):
+a tuning dialog with live preview + controls (size / color / spin /
+aria-label) and three reactive code snippets — one per usage flavour
+(`<dg-icon>`, `.dgi`, `.dgf`) — each with its own copy button. The snippets
+are pure `computed()` from the four control signals, so they update as you
+adjust the inputs.
+
+### DgHtmlToPdfService + DgPdfPreview (`<dg-pdf-preview>`)
+Convert HTML → PDF in the browser and preview the result side-by-side.
+
+**`DgHtmlToPdfService`** (`@Injectable({ providedIn: 'root' })`):
+```ts
+await convert(source: string | HTMLElement, options?: {
+  format?: 'a4' | 'a3' | 'a5' | 'letter' | 'legal',   // default 'a4'
+  orientation?: 'portrait' | 'landscape',              // default 'portrait'
+  margin?: number,                                     // mm, default 10
+  scale?: number,                                      // html2canvas DPI, default 2
+}): Promise<Blob>
+```
+
+Lazy-loads `jspdf` + `html2canvas` via `await import(...)` on first `convert()`
+— the ~250 kB cost is paid only when used, and consumers who never call this
+service ship neither library. Both are declared as **optional peer
+dependencies** in [`projects/dungeon-ui/package.json`](../projects/dungeon-ui/package.json):
+
+```bash
+npm install jspdf html2canvas
+```
+
+**Limitations:**
+- **Browser-only.** Throws on SSR (`window`/`document` required).
+- **Raster output.** html2canvas captures the DOM as canvas; jspdf embeds the
+  resulting image. Text in the PDF is **not selectable / searchable**. For
+  selectable-text PDFs (true vector output), use a server-side headless
+  Chromium pipeline instead — outside this library's scope.
+- Modern CSS (subgrid, container queries, some filter effects) may render
+  imperfectly through html2canvas.
+
+**`DgPdfPreview`** (`<dg-pdf-preview>`):
+- Inputs: `blob` (Blob | null), `filename` (string, default `'document.pdf'`),
+  `height` (string | number, default `'600px'`).
+- Outputs: `(downloaded)` — emits filename after the user clicks Download.
+- Renders an `<iframe>` bound to `URL.createObjectURL(blob)`; the prior URL
+  is `revokeObjectURL`'d on the next blob change and on destroy (via
+  `effect(onCleanup)` + `DestroyRef.onDestroy`).
+- Toolbar shows the filename + human-readable byte count + a Download `<a>`
+  trigger.
+
+Usage:
+```ts
+const svc = inject(DgHtmlToPdfService);
+const blob = await svc.convert('<h1>Hello</h1>', { format: 'a4', margin: 10 });
+// pass `blob` into <dg-pdf-preview [blob]="blob" filename="hello.pdf" />
+```
+
+The `/html-to-pdf` demo page wires the two together: textarea (HTML source)
+on the left, `<dg-pdf-preview>` on the right, with a toolbar exposing format
+/ orientation / margin / scale.
+
+**`DgPdfSource` directive** (`[dgPdfSource]`, exportAs `dgPdfSource`):
+Mark any DOM element as a PDF source; call `download()` / `toBlob()` from
+the template without injecting the service manually. Each call captures the
+element's current live HTML — signals / form values / async data inside the
+marked subtree are picked up at convert time.
+
+Inputs:
+- `dgPdfSource` (options object, default `{}`) — baked-in conversion options
+  for this element. Both `[dgPdfSource]="{...}"` and bare `dgPdfSource` work
+  (the empty-string form normalizes to `{}`).
+- `filename` (default `'document.pdf'`) — used by `download()`.
+
+Methods:
+- `toBlob(overrides?: DgHtmlToPdfOptions): Promise<Blob>` — shallow-merges
+  per-call overrides on top of the directive's `[dgPdfSource]` options.
+- `download(overrides?)` — convert + trigger browser download.
+
+```html
+<div [dgPdfSource]="{ margin: 15, quality: 0.9 }"
+     filename="invoice.pdf"
+     #pdf="dgPdfSource">
+  <h1>Invoice #2026-001</h1>
+  <p>Counter: {{ counter() }}</p>
+</div>
+
+<dg-button label="Download PDF" (clicked)="pdf.download()" />
+<dg-button label="Email PDF"   (clicked)="email(pdf)" />
+```
+
+```ts
+async email(src: DgPdfSource) {
+  const blob = await src.toBlob({ quality: 0.95 });
+  await this.api.send(blob);
+}
+```
+
+The `/html-to-pdf` demo page includes a directive-usage section near the
+bottom with a live-counter card to show that converting captures the
+*current* DOM state.
+
 ### DgInputText (`<dg-input-text>`)
 Wraps native `<input>`. Implements `ControlValueAccessor`.
 Inputs (signal):

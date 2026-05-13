@@ -27,6 +27,7 @@ export class App {
     { label: 'Input Mask', value: '/input-mask', icon: '🎭' },
     { label: 'Input Number', value: '/input-number', icon: '🔢' },
     { label: 'Input Group', value: '/input-group', icon: '🧩' },
+    { label: 'Icon', value: '/icon', icon: '✨' },
     { label: 'Icon Field', value: '/icon-field', icon: '🔍' },
     { label: 'Dialog', value: '/dialog', icon: '🗨️' },
     { label: 'Dropdown', value: '/dropdown', icon: '🔽' },
@@ -37,6 +38,7 @@ export class App {
     { label: 'Table', value: '/table', icon: '📋' },
     { label: 'Nav Menu', value: '/nav-menu', icon: '🧭' },
     { label: 'Focus Trap', value: '/focus-trap', icon: '🪤' },
+    { label: 'HTML → PDF', value: '/html-to-pdf', icon: '📄' },
   ];
 
   private readonly currentUrl = toSignal(

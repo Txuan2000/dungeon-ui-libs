@@ -452,6 +452,29 @@ export const SEARCH_INDEX: readonly SearchEntry[] = [
     keywords: 'vertical sidebar',
   },
 
+  // --- Icon ---
+  {
+    title: 'Gallery — 54 icons',
+    page: 'Icon',
+    route: '/icon',
+    keywords: 'icon biểu tượng svg bộ icon primeng gallery tất cả copy name',
+    hint: 'click để copy kebab-case name vào clipboard',
+  },
+  {
+    title: 'Size + currentColor + spin',
+    page: 'Icon',
+    route: '/icon',
+    keywords: 'icon size 1em scale màu color currentColor spin spinner refresh undo loading',
+    hint: 'size px / "1em" · color theo text · spin animation',
+  },
+  {
+    title: 'Compose vào nút + accessibility',
+    page: 'Icon',
+    route: '/icon',
+    keywords: 'icon button compose dg-button aria-label aria-hidden role img decorative screen reader',
+    hint: 'project <dg-icon> vào <dg-button>; ariaLabel cho icon mang nghĩa',
+  },
+
   // --- Focus Trap ---
   {
     title: 'Cơ bản — Tab loop trong container',
@@ -470,5 +493,20 @@ export const SEARCH_INDEX: readonly SearchEntry[] = [
     page: 'Focus Trap',
     route: '/focus-trap',
     keywords: 'viewChild exportAs ref method',
+  },
+
+  // --- HTML → PDF ---
+  {
+    title: 'Side-by-side: HTML source + PDF preview',
+    page: 'HTML → PDF',
+    route: '/html-to-pdf',
+    keywords: 'html pdf convert raster jspdf html2canvas xuất pdf in tài liệu hoá đơn invoice preview iframe download',
+    hint: 'edit HTML, convert qua DgHtmlToPdfService, preview Blob trong iframe',
+  },
+  {
+    title: 'Tuỳ chỉnh format / orientation / margin / scale',
+    page: 'HTML → PDF',
+    route: '/html-to-pdf',
+    keywords: 'a4 a3 a5 letter legal portrait landscape margin scale dpi',
   },
 ];

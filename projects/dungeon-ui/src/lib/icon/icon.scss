@@ -1,0 +1,25 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  color: inherit;
+  vertical-align: -0.125em;
+}
+
+.dg-icon {
+  display: inline-block;
+  fill: currentColor;
+  color: currentColor;
+  flex-shrink: 0;
+}
+
+.dg-icon--spin {
+  animation: dg-icon-spin 1s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes dg-icon-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

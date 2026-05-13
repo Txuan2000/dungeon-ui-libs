@@ -19,6 +19,7 @@ import { RouterLink } from '@angular/router';
         <li><a routerLink="/input-mask"><strong>Input Mask</strong> — directive định dạng input theo pattern</a></li>
         <li><a routerLink="/input-number"><strong>Input Number</strong> — currency / percent, spinner, min/max</a></li>
         <li><a routerLink="/input-group"><strong>Input Group</strong> — ghép input + addon + button thành 1 khối</a></li>
+        <li><a routerLink="/icon"><strong>Icon</strong> — 54 SVG icon ported từ PrimeNG, currentColor + spin</a></li>
         <li><a routerLink="/icon-field"><strong>Icon Field</strong> — overlay icon bên trong input</a></li>
         <li><a routerLink="/dialog"><strong>Dialog</strong> — inline + service-driven, custom header/footer</a></li>
         <li><a routerLink="/dropdown"><strong>Dropdown</strong> — filter, body portal, custom templates</a></li>
@@ -26,6 +27,7 @@ import { RouterLink } from '@angular/router';
         <li><a routerLink="/table"><strong>Table</strong> — virtual scroll, pagination (client/server/cursor)</a></li>
         <li><a routerLink="/nav-menu"><strong>Nav Menu</strong> — PrimeNG-aligned menubar / sidebar / tabs</a></li>
         <li><a routerLink="/focus-trap"><strong>Focus Trap</strong> — directive giam tab trong container</a></li>
+        <li><a routerLink="/html-to-pdf"><strong>HTML → PDF</strong> — service convert + preview iframe, side-by-side demo</a></li>
       </ul>
     </section>
   `,

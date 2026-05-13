@@ -22,6 +22,8 @@
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.4",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -34,6 +36,9 @@
     "jsdom": "^28.0.0",
     "ng-packagr": "^21.2.0",
     "prettier": "^3.8.1",
+    "svg2ttf": "^6.1.0",
+    "svgicons2svgfont": "^12.0.0",
+    "ttf2woff": "^3.0.0",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8",
     "wrangler": "^4.90.0"

@@ -4,6 +4,7 @@ import {
   Component,
   ElementRef,
   HostListener,
+  afterRenderEffect,
   computed,
   contentChild,
   effect,
@@ -12,6 +13,7 @@ import {
   model,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import {
   DgNavMenuEndDef,
@@ -57,6 +59,7 @@ interface OpenItem {
     }
 
     <ul
+      #listEl
       class="dg-nav-menu__list"
       role="menubar"
       [attr.id]="id()"
@@ -64,6 +67,16 @@ interface OpenItem {
       [attr.aria-label]="ariaLabel() || null"
       [attr.data-mobile-active]="mobileActive() || null"
     >
+      @if (orientation() === 'vertical') {
+        <li
+          class="dg-nav-menu__indicator"
+          [class.dg-nav-menu__indicator--visible]="indicator() !== null"
+          [style.transform]="'translateY(' + (indicator()?.top ?? 0) + 'px)'"
+          [style.height.px]="indicator()?.height ?? 0"
+          role="presentation"
+          aria-hidden="true"
+        ></li>
+      }
       @for (item of visibleItems(); track trackItem($index, item); let i = $index) {
         @if (item.separator) {
           <li class="dg-nav-menu__separator" role="separator"></li>
@@ -303,6 +316,16 @@ export class DgNavMenu {
   private readonly viewportMatches = signal(false);
   private autoHideTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /**
+   * Vertical-mode "magic pill": single absolutely-positioned highlight inside
+   * the list, animated to the active item's offsetTop + offsetHeight via
+   * transform/height transitions. Null when no active item or non-vertical.
+   * Measured via afterRenderEffect (deps on value/model/orientation/viewport)
+   * so it re-runs after Angular updates the DOM with the new active class.
+   */
+  private readonly listRef = viewChild<ElementRef<HTMLUListElement>>('listEl');
+  protected readonly indicator = signal<{ top: number; height: number } | null>(null);
+
   protected readonly isMobile = computed(() => this.viewportMatches());
   protected readonly showMenuButton = computed(() => this.isMobile() && this.model().length > 0);
 
@@ -323,6 +346,52 @@ export class DgNavMenu {
       mql.addEventListener('change', listener);
       onCleanup(() => mql.removeEventListener('change', listener));
     });
+
+    afterRenderEffect(() => {
+      // Track inputs that affect the active item's geometry so the indicator
+      // re-measures after Angular has applied the new active class to the DOM.
+      this.value();
+      this.model();
+      this.orientation();
+      this.viewportMatches();
+      this.measureIndicator();
+    });
+
+    // ResizeObserver on the list so font changes / window resize keep the
+    // indicator aligned. Re-attaches whenever the viewChild becomes defined.
+    effect((onCleanup) => {
+      const list = this.listRef()?.nativeElement;
+      if (!list || typeof ResizeObserver === 'undefined') return;
+      const ro = new ResizeObserver(() => this.measureIndicator());
+      ro.observe(list);
+      onCleanup(() => ro.disconnect());
+    });
+  }
+
+  private measureIndicator(): void {
+    if (this.orientation() !== 'vertical') {
+      this.indicator.set(null);
+      return;
+    }
+    const list = this.listRef()?.nativeElement;
+    if (!list) {
+      this.indicator.set(null);
+      return;
+    }
+    const active = list.querySelector<HTMLElement>('.dg-nav-menu__item--active');
+    if (!active) {
+      this.indicator.set(null);
+      return;
+    }
+    const next = { top: active.offsetTop, height: active.offsetHeight };
+    // SSR / pre-layout: JSDOM reports 0×0 because no layout is computed. Bail
+    // so the prerendered HTML doesn't bake in a visible indicator at the
+    // default position — the client will run measureIndicator again post-
+    // hydration and pick up real geometry.
+    if (next.height === 0) return;
+    const prev = this.indicator();
+    if (prev && prev.top === next.top && prev.height === next.height) return;
+    this.indicator.set(next);
   }
 
   protected hasChildren(item: DgNavMenuItem): boolean {

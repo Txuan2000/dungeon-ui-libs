@@ -3,7 +3,13 @@
   "version": "0.0.3",
   "peerDependencies": {
     "@angular/common": "^21.2.0",
-    "@angular/core": "^21.2.0"
+    "@angular/core": "^21.2.0",
+    "jspdf": "^3.0.0",
+    "html2canvas": "^1.4.0"
+  },
+  "peerDependenciesMeta": {
+    "jspdf": { "optional": true },
+    "html2canvas": { "optional": true }
   },
   "dependencies": {
     "tslib": "^2.3.0"

@@ -229,6 +229,64 @@ $dg-nav-focus-ring: 0 0 0 2px rgba(37, 99, 235, 0.35);
   font-weight: 500;
 }
 
+// --- Vertical orientation: full-width rows + sliding "magic pill" highlight ---
+//
+// The active background is rendered by .dg-nav-menu__indicator (absolutely
+// positioned inside the list, transitioned on transform/height) so it can
+// slide between rows. The per-item background above is suppressed here to
+// avoid double-painting.
+:host[data-orientation='vertical'] {
+  .dg-nav-menu__list {
+    position: relative; // anchor for the indicator
+  }
+
+  .dg-nav-menu__item {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .dg-nav-menu__link {
+    flex: 1 1 auto;
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    // Keep the row content above the indicator without joining a new
+    // stacking context that would clip it.
+    position: relative;
+    z-index: 1;
+  }
+
+  .dg-nav-menu__item--active > .dg-nav-menu__link {
+    background: transparent; // indicator handles the highlight fill
+  }
+
+  .dg-nav-menu__indicator {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    background: #dbeafe;
+    border-radius: 0.375rem;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 0;
+    transform: translateY(0);
+    transition:
+      transform 280ms cubic-bezier(0.4, 0, 0.2, 1),
+      height 280ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 160ms ease;
+
+    &--visible {
+      opacity: 1;
+    }
+  }
+}
+
+// Vertical + pills variant: indicator picks up the pill shape too.
+:host[data-orientation='vertical'][data-variant='pills'] .dg-nav-menu__indicator {
+  border-radius: 999px;
+}
+
 // --- Variants ---
 :host[data-variant='pills'] .dg-nav-menu__link {
   border-radius: 999px;

@@ -3,6 +3,7 @@
  */
 
 export * from './lib/button';
+export * from './lib/icon';
 export * from './lib/input-text';
 export * from './lib/input-mask';
 export * from './lib/input-number';
@@ -10,6 +11,7 @@ export * from './lib/input-group';
 export * from './lib/icon-field';
 export * from './lib/dialog';
 export * from './lib/focus-trap';
+export * from './lib/html-to-pdf';
 export * from './lib/table';
 export * from './lib/checkbox';
 export * from './lib/radio';

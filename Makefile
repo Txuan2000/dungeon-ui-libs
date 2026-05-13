@@ -4,6 +4,7 @@
 
 .DEFAULT_GOAL := help
 .PHONY: help install build build-lib dev test validate clean \
+        icons-build \
         rag-status rag-ingest \
         pages-dev pages-clean deploy deploy-preview \
         cdn-bump cdn-deploy \
@@ -38,6 +39,13 @@ build: ## Build lib + showcase (prerendered, production).
 
 build-lib: ## Build only the dungeon-ui library to dist/dungeon-ui.
 	npx ng build dungeon-ui
+
+icons-build: ## Build standalone icon artifacts (dg-icons.css + webfont) into dist/dungeon-ui/icons + public/icons.
+	@# Two emits: dist/ for the npm/CDN consumer, public/ for the showcase to
+	@# serve at /icons/dg-icons.css. The script regenerates from the
+	@# DG_ICONS registry — no need to re-touch primeng-ref.
+	node scripts/build-icon-artifacts.mjs
+	node scripts/build-icon-artifacts.mjs --dest=public/icons
 
 dev: ## Run the showcase dev server (ng serve, http://localhost:4200).
 	npx ng serve
@@ -80,7 +88,7 @@ deploy-preview: build pages-clean ## Deploy to the `preview` branch (https://pre
 cdn-bump: ## Bump library version (interactive; or pass VERSION=x.y.z to skip prompt).
 	node scripts/bump-version.mjs
 
-cdn-deploy: cdn-bump build-lib ## Bump version, build, deploy library to https://$(CDN_PROJ).pages.dev.
+cdn-deploy: cdn-bump build-lib icons-build ## Bump version, build, deploy library + icons to https://$(CDN_PROJ).pages.dev.
 	@# _headers entry: allow cross-origin ESM imports + cache for 30 days.
 	@# 2592000s = 30d. The fesm/types paths don't include a content hash,
 	@# so consumers will be pinned to whatever was deployed for up to a month —
